@@ -80,11 +80,27 @@ export const WorldConfig = {
         ROCK_MEDIUM: 3,
         ROCK_LARGE: 4,
         FLOWER: 5,
+        BUSH_SAND: 6,
+        BUSH_GRASS: 7,
+        BUSH_DIRT: 8,
 
         TREE_SCALE: 4.0,
         ALLOWED_TERRAINS_TREES: [3, 4],
         ALLOWED_TERRAINS_ROCKS: [2, 3, 5], // Sand, Grass Light, Dirt
-        ALLOWED_TERRAINS_FLOWERS: [3, 4] // Grass Light, Grass Dark
+        ALLOWED_TERRAINS_FLOWERS: [3, 4], // Grass Light, Grass Dark
+        ALLOWED_TERRAINS_BUSH_SAND: [2],       // Sand
+        ALLOWED_TERRAINS_BUSH_GRASS: [3, 4],   // Grass Light, Grass Dark
+        ALLOWED_TERRAINS_BUSH_DIRT: [5]         // Dirt
+    },
+
+    // Bush color palettes per terrain (harmonized with terrain palettes)
+    BUSH_COLORS: {
+        // Sand bushes: dry, muted sage greens and tan
+        SAND: [0xA8B06A, 0xB5A86B, 0x8E9960, 0xC2B87A],
+        // Grass bushes: vibrant leafy greens
+        GRASS: [0x4A8C3F, 0x5DA84E, 0x3B7A34, 0x6BB85A],
+        // Dirt bushes: deep olive and brown-greens
+        DIRT: [0x6B7A3A, 0x5C6832, 0x7A8844, 0x4E5B2B]
     },
 
     // Harmonized Flower Colors (AAA-style, cohesive with environment)
