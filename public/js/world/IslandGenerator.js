@@ -28,6 +28,7 @@ export class IslandGenerator {
         const bushSandT = new Uint8Array(6);
         const bushGrassT = new Uint8Array(6);
         const bushDirtT = new Uint8Array(6);
+        
         O.ALLOWED_TERRAINS_TREES.forEach(t => treeTerrain[t] = 1);
         O.ALLOWED_TERRAINS_ROCKS.forEach(t => rockTerrain[t] = 1);
         O.ALLOWED_TERRAINS_FLOWERS.forEach(t => flowerTerrain[t] = 1);

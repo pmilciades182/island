@@ -94,7 +94,19 @@ class GameScene extends Phaser.Scene {
     // Step 1: Load save data
     setStep('Loading save data...', 0);
     const res = await fetch(`/api/saves/${this.saveId}`);
-    this.saveData = await res.json();
+
+    if (!res.ok) {
+      console.error("Save fetch failed:", res.status, res.statusText);
+      // You can decide to create new player or go back to menu
+      this.saveData = { player: this.getDefaultPlayer() }; // ← fallback
+    } else {
+      this.saveData = await res.json();
+    }
+
+    console.log("Loaded save data:", this.saveData);           // ← inspect this!
+    console.log("this.saveData.player =", this.saveData?.player);
+
+    //this.saveData = await res.json();
     const p = this.saveData.player;
 
     // World bounds

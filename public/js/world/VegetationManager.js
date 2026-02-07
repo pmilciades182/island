@@ -90,20 +90,53 @@ export class VegetationManager {
     r3.generateTexture('rock_large', 64, 64);
     r3.destroy();
 
-    // Bush Sand: low, wide, dry scrub (32x24)
     WorldConfig.BUSH_COLORS.SAND.forEach((color, i) => {
       const b = scene.add.graphics();
-      b.fillStyle(0x000000, 0.25);
-      b.fillEllipse(16, 22, 28, 6);
+      // 1. Sombra en el suelo (un poco más alargada para base triangular)
+      b.fillStyle(0x000000, 0.28);
+      b.fillEllipse(16, 23, 30, 9);           // ← ligeramente más ancha
+      // 2. Base del arbusto (elíptica pero un poco más alta para dar altura triangular)
       b.fillStyle(color, 1);
-      b.fillEllipse(16, 14, 26, 14);
-      b.fillStyle(Phaser.Display.Color.IntegerToColor(color).brighten(15).color, 1);
-      b.fillEllipse(12, 12, 12, 8);
-      b.fillEllipse(22, 10, 10, 7);
+      b.fillEllipse(16, 16, 24, 16);          // base más vertical
+      // 3. Parte central: punta principal alargada (como fronda central de palmera)
+      const bright = Phaser.Display.Color.IntegerToColor(color).brighten(20 + (i % 12)).color;
+      b.fillStyle(bright, 1);
+      // Triángulo central puntiagudo (punta arriba)
+      b.fillTriangle(
+        16, 6,          // punta superior
+        10, 14,         // base izquierda
+        22, 14          // base derecha
+      );
+      // Refuerzo central con elipse para volumen
+      b.fillEllipse(16, 13, 10, 12);
+      // 4. Dos "hojas" laterales puntiagudas (estilo palmera seca, inclinadas)
+      const mid = Phaser.Display.Color.IntegerToColor(bright).lighten(8).color;
+      b.fillStyle(mid, 0.95);
+      // Hoja izquierda: triangular inclinada hacia izquierda
+      b.fillTriangle(
+        8 + (i % 3 - 1), 9,     // punta
+        4 + (i % 2), 16,     // base inferior izquierda
+        14 + (i % 3), 15      // base inferior derecha
+      );
+      // Hoja derecha: triangular inclinada hacia derecha
+      b.fillStyle(Phaser.Display.Color.IntegerToColor(mid).brighten(5).color, 0.92);
+      b.fillTriangle(
+        24 - (i % 3 - 1), 9,     // punta
+        18 - (i % 2), 15,     // base inferior izquierda
+        28 - (i % 3), 16      // base inferior derecha
+      );
+      // 5. Detalle sutil: arenilla o puntas secas (opcional, para textura desértica)
+      b.fillStyle(0xf0e0c0, 0.7);
+      b.fillCircle(16, 7, 1.2);               // puntita clara en la cima
+      if (i % 2 === 0) {
+        b.fillCircle(9, 10, 1.0);
+        b.fillCircle(23, 10, 1.0);
+      }
+      // Generar textura (mismo tamaño original)
       b.generateTexture(`bush_sand_${i}`, 32, 24);
       b.destroy();
     });
-
+    
     // Bush Grass: round and leafy, taller (28x28)
     WorldConfig.BUSH_COLORS.GRASS.forEach((color, i) => {
       const b = scene.add.graphics();
@@ -337,65 +370,103 @@ export class VegetationManager {
     }
   }
 
-  _createTreesInChunk(key) {
-    const [cx, cy] = key.split(',').map(Number);
-    const startX = cx * this.CHUNK_SIZE;
-    const startY = cy * this.CHUNK_SIZE;
-    const endX = startX + this.CHUNK_SIZE;
-    const endY = startY + this.CHUNK_SIZE;
+  _createTreesInChunk(chunkKey) {
+    const [chunkX, chunkY] = chunkKey.split(',').map(Number);
 
-    const gStartX = Math.floor(startX / 2.5);
-    const gStartY = Math.floor(startY / 2.5);
-    const gEndX = Math.ceil(endX / 2.5);
-    const gEndY = Math.ceil(endY / 2.5);
+    // Límites del chunk en coordenadas del mundo
+    const worldMinX = chunkX * this.CHUNK_SIZE;
+    const worldMinY = chunkY * this.CHUNK_SIZE;
+    const worldMaxX = worldMinX + this.CHUNK_SIZE;
+    const worldMaxY = worldMinY + this.CHUNK_SIZE;
 
-    if (gStartX < 0 || gStartY < 0 || gStartX >= 8000 || gStartY >= 8000) return;
+    // Convertir a coordenadas de la grilla de vegetación (resolución 2.5 px por celda)
+    const gridMinX = Math.floor(worldMinX / 2.5);
+    const gridMinY = Math.floor(worldMinY / 2.5);
+    const gridMaxX = Math.ceil(worldMaxX / 2.5);
+    const gridMaxY = Math.ceil(worldMaxY / 2.5);
 
-    const width = 8000;
+    // Salir temprano si el chunk está completamente fuera del mapa
+    if (gridMaxX <= 0 || gridMaxY <= 0 || gridMinX >= 8000 || gridMinY >= 8000) {
+      return;
+    }
 
-    for (let y = gStartY; y < gEndY; y++) {
-      for (let x = gStartX; x < gEndX; x++) {
-        if (x < 0 || x >= width || y < 0 || y >= width) continue;
+    const GRID_WIDTH = 8000;
+    const terrainData = this.scene.generator?.data ?? null;
 
-        const index = y * width + x;
+    for (let gy = Math.max(0, gridMinY); gy < Math.min(GRID_WIDTH, gridMaxY); gy++) {
+      for (let gx = Math.max(0, gridMinX); gx < Math.min(GRID_WIDTH, gridMaxX); gx++) {
+        const index = gy * GRID_WIDTH + gx;
         const objType = this.vegetationData[index];
 
-        if (objType > 0) {
-          const terrainData = this.scene.generator ? this.scene.generator.data : null;
-          const terrain = terrainData ? terrainData[index] : -1;
-          let textureKey = terrain === WorldConfig.TERRAIN.GRASS_DARK ? 'tree_dark' : 'tree';
-          let originY = 0.9;
+        if (objType <= 0) continue;
 
-          if (objType === WorldConfig.OBJECTS.ROCK_SMALL) { textureKey = 'rock_small'; originY = 0.7; }
-          else if (objType === WorldConfig.OBJECTS.ROCK_MEDIUM) { textureKey = 'rock_medium'; originY = 0.8; }
-          else if (objType === WorldConfig.OBJECTS.ROCK_LARGE) { textureKey = 'rock_large'; originY = 0.85; }
-          else if (objType === WorldConfig.OBJECTS.FLOWER) {
-            const colorIndex = Math.floor(Math.random() * 16);
-            textureKey = `flower_${colorIndex}`;
+        // Tipo de terreno para decidir variante (ej: árbol oscuro en zonas oscuras)
+        const terrain = terrainData ? terrainData[index] : -1;
+        const isDarkGrass = terrain === WorldConfig.TERRAIN.GRASS_DARK;
+
+        // Configuración por defecto
+        let textureKey = isDarkGrass ? 'tree_dark' : 'tree';
+        let originY = 0.9;
+        let scale = 1;           // ← puedes usar esto después si quieres variedad
+        let randomOffset = 2;    // ← radio de jitter
+
+        // Sobrescribir según tipo de objeto
+        switch (objType) {
+          case WorldConfig.OBJECTS.ROCK_SMALL:
+            textureKey = 'rock_small';
+            originY = 0.7;
+            break;
+
+          case WorldConfig.OBJECTS.ROCK_MEDIUM:
+            textureKey = 'rock_medium';
             originY = 0.8;
-          } else if (objType === WorldConfig.OBJECTS.BUSH_SAND) {
+            break;
+
+          case WorldConfig.OBJECTS.ROCK_LARGE:
+            textureKey = 'rock_large';
+            originY = 0.85;
+            break;
+
+          case WorldConfig.OBJECTS.FLOWER:
+            const color = Math.floor(Math.random() * 16);
+            textureKey = `flower_${color}`;
+            originY = 0.8;
+            break;
+
+          case WorldConfig.OBJECTS.BUSH_SAND:
             textureKey = `bush_sand_${Math.floor(Math.random() * 4)}`;
             originY = 0.85;
-          } else if (objType === WorldConfig.OBJECTS.BUSH_GRASS) {
+            break;
+
+          case WorldConfig.OBJECTS.BUSH_GRASS:
             textureKey = `bush_grass_${Math.floor(Math.random() * 4)}`;
             originY = 0.85;
-          } else if (objType === WorldConfig.OBJECTS.BUSH_DIRT) {
+            break;
+
+          case WorldConfig.OBJECTS.BUSH_DIRT:
             textureKey = `bush_dirt_${Math.floor(Math.random() * 4)}`;
             originY = 0.85;
-          }
+            break;
 
-          const worldX = x * 2.5;
-          const worldY = y * 2.5;
-          const jx = worldX + (Math.random() * 2 - 1);
-          const jy = worldY + (Math.random() * 2 - 1);
-
-          const obj = this.scene.add.image(jx, jy, textureKey);
-          obj.setOrigin(0.5, originY);
-          obj.setDepth(jy);
-          obj.chunkKey = key;
-          this.treesGroup.add(obj);
+          // Puedes agregar más tipos fácilmente aquí
         }
+
+        // Posición final con pequeño desplazamiento aleatorio (jitter)
+        const baseX = gx * 2.5;
+        const baseY = gy * 2.5;
+        const worldX = baseX + (Math.random() * randomOffset - randomOffset / 2);
+        const worldY = baseY + (Math.random() * randomOffset - randomOffset / 2);
+
+        // Crear sprite
+        const sprite = this.scene.add.image(worldX, worldY, textureKey);
+        sprite.setOrigin(0.5, originY);
+        sprite.setDepth(worldY);           // profundidad según Y (perspectiva isométrica)
+        sprite.chunkKey = chunkKey;
+
+        this.treesGroup.add(sprite);
       }
     }
   }
+
+
 }
