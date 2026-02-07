@@ -1,0 +1,15 @@
+{
+  "name": "island-survival",
+  "version": "1.0.0",
+  "description": "2D survival game with Phaser.js",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "stop": "taskkill /F /FI \"IMAGENAME eq node.exe\" /FI \"WINDOWTITLE eq *island*\" 2>nul || taskkill /F /IM node.exe",
+    "restart": "npm run stop && npm start"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}

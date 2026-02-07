@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"mkdir C:\\\\Users\\\\slot_tech\\\\cannabis\\\\server 2>nul & mkdir C:\\\\Users\\\\slot_tech\\\\cannabis\\\\public\\\\js\\\\scenes 2>nul\")",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(cmd /c \"netstat -ano | findstr :3000\")",
+      "Bash(cmd /c \"set PORT=3001 && node server/index.js\")",
+      "Bash(node:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"netstat -ano | findstr LISTENING | findstr 300\")",
+      "Bash(cmd /c \"taskkill /F /IM node.exe /T 2>nul & ping -n 3 127.0.0.1 >nul & echo cleared\")",
+      "Bash(cmd /c \"taskkill /F /IM node.exe /T 2>nul & ping -n 3 127.0.0.1 >nul & echo done\")",
+      "Bash(cmd /c \"dir /s /b C:\\\\Users\\\\slot_tech\\\\cannabis\\\\public\\\\assets 2>nul\")",
+      "Bash(file:*)",
+      "Bash(done)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:newdocs.phaser.io)",
+      "WebFetch(domain:rexrainbow.github.io)",
+      "WebFetch(domain:phaser.io)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
