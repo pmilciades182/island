@@ -7,7 +7,6 @@ export class ProximityManager {
     this.taskDistributor = taskDistributor;
     this.radius = config.radius || 100; // Default radius
     this.debugGraphics = scene.add.graphics().setDepth(1000);
-    console.log('[ProximityManager] Initialized with radius:', this.radius);
   }
 
   update() {

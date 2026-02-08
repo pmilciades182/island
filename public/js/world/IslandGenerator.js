@@ -9,7 +9,6 @@ export class IslandGenerator {
         this.gridSize = Math.floor(worldSize / tileSize); // 8000
         this.data = new Uint8Array(this.gridSize * this.gridSize);
         this.vegetation = new Uint8Array(this.gridSize * this.gridSize);
-        console.log('[IslandGenerator] Initialized. Terrain data length:', this.data.length, 'Vegetation data length:', this.vegetation.length);
     }
 
     async generate(onProgress) {

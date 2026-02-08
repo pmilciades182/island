@@ -6,7 +6,6 @@ export class VegetationManager {
     this.vegetationData = vegetationData;
     this.CHUNK_SIZE = 500;
     this.spriteMap = new Map();
-    console.log('[VegetationManager] Initialized. vegetationData length:', this.vegetationData.length);
 
     // Tree Management Group
     this.treesGroup = scene.add.group();
