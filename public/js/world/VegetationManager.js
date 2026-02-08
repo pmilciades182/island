@@ -409,17 +409,20 @@ export class VegetationManager {
         let originY = 0.9;
         let scale = 1;           // ← puedes usar esto después si quieres variedad
         let randomOffset = 2;    // ← radio de jitter
+        let ySort = true;        // Y-sorting (can overlap player)
 
         // Sobrescribir según tipo de objeto
         switch (objType) {
           case WorldConfig.OBJECTS.ROCK_SMALL:
             textureKey = 'rock_small';
             originY = 0.7;
+            ySort = false;
             break;
 
           case WorldConfig.OBJECTS.ROCK_MEDIUM:
             textureKey = 'rock_medium';
             originY = 0.8;
+            ySort = false;
             break;
 
           case WorldConfig.OBJECTS.ROCK_LARGE:
@@ -431,24 +434,26 @@ export class VegetationManager {
             const color = Math.floor(Math.random() * 16);
             textureKey = `flower_${color}`;
             originY = 0.8;
+            ySort = false;
             break;
 
           case WorldConfig.OBJECTS.BUSH_SAND:
             textureKey = `bush_sand_${Math.floor(Math.random() * 4)}`;
             originY = 0.85;
+            ySort = false;
             break;
 
           case WorldConfig.OBJECTS.BUSH_GRASS:
             textureKey = `bush_grass_${Math.floor(Math.random() * 4)}`;
             originY = 0.85;
+            ySort = false;
             break;
 
           case WorldConfig.OBJECTS.BUSH_DIRT:
             textureKey = `bush_dirt_${Math.floor(Math.random() * 4)}`;
             originY = 0.85;
+            ySort = false;
             break;
-
-          // Puedes agregar más tipos fácilmente aquí
         }
 
         // Posición final con pequeño desplazamiento aleatorio (jitter)
@@ -460,7 +465,9 @@ export class VegetationManager {
         // Crear sprite
         const sprite = this.scene.add.image(worldX, worldY, textureKey);
         sprite.setOrigin(0.5, originY);
-        sprite.setDepth(worldY);           // profundidad según Y (perspectiva isométrica)
+        // Trees & large rocks: Y-sort (can appear in front of player)
+        // Everything else: fixed low depth (always behind player)
+        sprite.setDepth(ySort ? worldY : 2);
         sprite.chunkKey = chunkKey;
 
         this.treesGroup.add(sprite);

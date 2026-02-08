@@ -197,6 +197,41 @@ class GameScene extends Phaser.Scene {
     this._debugEl = document.getElementById('debug-panel');
     this._debugJitterLog = []; // track camera position jumps
 
+    // GPU info (one-time)
+    try {
+      const gl = this.sys.game.renderer.gl;
+      if (gl) {
+        const maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+        const debugExt = gl.getExtension('WEBGL_debug_renderer_info');
+        const gpuVendor = debugExt ? gl.getParameter(debugExt.UNMASKED_VENDOR_WEBGL) : 'N/A';
+        const gpuRenderer = debugExt ? gl.getParameter(debugExt.UNMASKED_RENDERER_WEBGL) : 'N/A';
+        const texOverflow = (8000 > maxTex) ? '<span class="err">TEXTURE EXCEEDS MAX!</span>' : 'OK';
+        // Display/CSS info
+        const dpr = window.devicePixelRatio || 1;
+        const canvasEl = this.sys.game.canvas;
+        const rect = canvasEl.getBoundingClientRect();
+        const canvasW = canvasEl.width;
+        const canvasH = canvasEl.height;
+        const cssW = rect.width;
+        const cssH = rect.height;
+        const cssX = rect.x;
+        const cssY = rect.y;
+        const scaled = (canvasW !== Math.round(cssW * dpr)) ? '<span class="err">MISMATCH</span>' : 'OK';
+
+        this._debugGpuInfo = `GPU: ${gpuRenderer}<br>Vendor: ${gpuVendor}<br>MaxTexSize: ${maxTex}<br>8000x8000: ${texOverflow}<br>` +
+          `DPR: ${dpr}<br>` +
+          `Canvas px: ${canvasW}x${canvasH}<br>` +
+          `CSS size: ${cssW.toFixed(1)}x${cssH.toFixed(1)}<br>` +
+          `CSS pos: ${cssX.toFixed(2)}, ${cssY.toFixed(2)}<br>` +
+          `Frac pos: ${(cssX % 1).toFixed(4)}, ${(cssY % 1).toFixed(4)}<br>` +
+          `Scale match: ${scaled}`;
+      } else {
+        this._debugGpuInfo = 'Canvas2D (no GL)';
+      }
+    } catch (e) {
+      this._debugGpuInfo = `Error: ${e.message}`;
+    }
+
     this.ready = true;
   }
 
@@ -205,6 +240,22 @@ class GameScene extends Phaser.Scene {
 
     // Player movement
     const moveState = this.playerController.update(delta, this.stamina, this.maxStamina);
+
+    // Dynamic camera lerp: fast settle when player stops, smooth follow when moving
+    const cam = this.cameras.main;
+    if (moveState.moving) {
+      cam.setLerp(0.06, 0.06);
+    } else {
+      // Snap camera quickly when player stops to avoid drift wobble
+      const target = this.playerController.playerContainer;
+      const dx = Math.abs((target.x - cam.width / 2) - cam.scrollX);
+      const dy = Math.abs((target.y - cam.height / 2) - cam.scrollY);
+      if (dx < 1 && dy < 1) {
+        cam.setLerp(1, 1); // instant snap for sub-pixel drift
+      } else {
+        cam.setLerp(0.2, 0.2); // settle
+      }
+    }
 
     // ── Debug update (DOM) ──
     if (this._debugEl) {
@@ -328,6 +379,8 @@ class GameScene extends Phaser.Scene {
         ${terrainHtml}<br>
         <div class="section">TERRAIN SHAKE</div>
         ${terrainShake}<br>
+        <div class="section">GPU INFO</div>
+        ${this._debugGpuInfo || 'Loading...'}<br>
         <div class="section">RENDER</div>
         Renderer: ${this.sys.game.renderer.type === 2 ? 'WebGL' : 'Canvas'}<br>
         pixelArt: ${this.sys.game.config.pixelArt}<br>

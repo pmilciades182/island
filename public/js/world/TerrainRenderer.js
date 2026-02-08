@@ -165,6 +165,12 @@ export class TerrainRenderer {
 
         return new Promise(resolve => {
             this.scene.textures.addCanvas('worldmap', smoothCanvas);
+
+            // CRITICAL: Mark texture source as non-canvas to prevent
+            // Phaser from re-uploading 256MB to the GPU every frame
+            const texSource = this.scene.textures.get('worldmap').source[0];
+            texSource.isCanvas = false;
+
             const img = this.scene.add.image(0, 0, 'worldmap');
             img.setOrigin(0, 0);
             img.setScale(tileSize * scale); // 2.5 * 1 = 2.5
