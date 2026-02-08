@@ -1,10 +1,12 @@
 import { WorldConfig } from './WorldConfig.js';
 import * as Objects from '../objects/index.js';
+import { createRNG } from '../util/rng.js';
 
 export class VegetationManager {
-  constructor(scene, vegetationData) {
+  constructor(scene, vegetationData, seed = 0) {
     this.scene = scene;
     this.vegetationData = vegetationData;
+    this.rng = createRNG(seed + 2);
     this.CHUNK_SIZE = 500;
     this.spriteMap = new Map();
 
@@ -420,19 +422,19 @@ export class VegetationManager {
           case Objects.IDS.ROCK_LARGE:
             textureKey = 'rock_large'; originY = 0.85; break;
           case Objects.IDS.FLOWER:
-            textureKey = `flower_${Math.floor(Math.random() * 16)}`; originY = 0.8; ySort = false; break;
+            textureKey = `flower_${this.rng ? this.rng.int(16) : Math.floor(Math.random() * 16)}`; originY = 0.8; ySort = false; break;
           case Objects.IDS.BUSH_SAND:
-            textureKey = `bush_sand_${Math.floor(Math.random() * 4)}`; originY = 0.85; ySort = false; break;
+            textureKey = `bush_sand_${this.rng ? this.rng.int(4) : Math.floor(Math.random() * 4)}`; originY = 0.85; ySort = false; break;
           case Objects.IDS.BUSH_GRASS:
-            textureKey = `bush_grass_${Math.floor(Math.random() * 4)}`; originY = 0.85; ySort = false; break;
+            textureKey = `bush_grass_${this.rng ? this.rng.int(4) : Math.floor(Math.random() * 4)}`; originY = 0.85; ySort = false; break;
           case Objects.IDS.BUSH_DIRT:
-            textureKey = `bush_dirt_${Math.floor(Math.random() * 4)}`; originY = 0.85; ySort = false; break;
+            textureKey = `bush_dirt_${this.rng ? this.rng.int(4) : Math.floor(Math.random() * 4)}`; originY = 0.85; ySort = false; break;
         }
 
         const baseX = gx * 2.5;
         const baseY = gy * 2.5;
-        const worldX = baseX + (Math.random() * 2 - 1);
-        const worldY = baseY + (Math.random() * 2 - 1);
+        const worldX = baseX + ((this.rng ? this.rng.range(-1, 1) : (Math.random() * 2 - 1)));
+        const worldY = baseY + ((this.rng ? this.rng.range(-1, 1) : (Math.random() * 2 - 1)));
 
         const sprite = this.scene.add.image(worldX, worldY, textureKey);
         sprite.setOrigin(0.5, originY);

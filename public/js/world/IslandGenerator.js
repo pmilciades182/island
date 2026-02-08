@@ -72,9 +72,11 @@ export class IslandGenerator {
                 let tileType;
                 if (value < -0.05) {
                     tileType = T.DEEP_WATER;
-                } else if (value < 0.05) {
+                } else if (value < 0.10) {
+                    // Widen shallow water band to be at least ~200% wider than original (0.05 -> 0.10)
                     tileType = T.SHALLOW_WATER;
-                } else if (value < 0.12) {
+                } else if (value < 0.33) {
+                    // Widen sand band (~400% wider than previous 0.12 threshold)
                     tileType = T.SAND;
                 } else {
                     const detail = noise.simplex2(nx * 10, ny * 10);

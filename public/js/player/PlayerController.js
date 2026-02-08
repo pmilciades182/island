@@ -1,13 +1,15 @@
 import { WorldConfig } from '../world/WorldConfig.js';
 import * as Objects from '../objects/index.js';
+import { createRNG } from '../util/rng.js';
 
 export class PlayerController {
-  constructor(scene, generator, soundManager = null) {
+  constructor(scene, generator, soundManager = null, seed = 0) {
     this.scene = scene;
     this.generator = generator;
     this.soundManager = soundManager;
     this.speed = 180;
     this.sprinting = false;
+    this.rng = createRNG(seed + 1);
 
     // Create player container and sprites
     const p = scene.saveData.player;
@@ -42,6 +44,11 @@ export class PlayerController {
     this._padDeadzone = 0.2;
 
     this.facing = 'down';
+    // Track last keydown timestamps to resolve conflicting opposite presses
+    this._keyTimes = {};
+    this.scene.input.keyboard.on('keydown', (ev) => {
+      this._keyTimes[ev.keyCode] = Date.now();
+    });
 
     // ── Foot particles ──
     const dustG = scene.add.graphics();
@@ -152,10 +159,27 @@ export class PlayerController {
       }
     }
 
-    const left = this.cursors.left.isDown || this.wasd.left.isDown;
-    const right = this.cursors.right.isDown || this.wasd.right.isDown;
-    const up = this.cursors.up.isDown || this.wasd.up.isDown;
-    const down = this.cursors.down.isDown || this.wasd.down.isDown;
+    let left = this.cursors.left.isDown || this.wasd.left.isDown;
+    let right = this.cursors.right.isDown || this.wasd.right.isDown;
+    let up = this.cursors.up.isDown || this.wasd.up.isDown;
+    let down = this.cursors.down.isDown || this.wasd.down.isDown;
+
+    // Resolve opposite presses by preferring the most-recent keydown
+    const codeLeft = Phaser.Input.Keyboard.KeyCodes.LEFT;
+    const codeRight = Phaser.Input.Keyboard.KeyCodes.RIGHT;
+    const codeUp = Phaser.Input.Keyboard.KeyCodes.UP;
+    const codeDown = Phaser.Input.Keyboard.KeyCodes.DOWN;
+
+    if (left && right) {
+      const tL = this._keyTimes[codeLeft] || 0;
+      const tR = this._keyTimes[codeRight] || 0;
+      if (tL >= tR) { right = false; } else { left = false; }
+    }
+    if (up && down) {
+      const tU = this._keyTimes[codeUp] || 0;
+      const tD = this._keyTimes[codeDown] || 0;
+      if (tU >= tD) { down = false; } else { up = false; }
+    }
 
     let vx = 0, vy = 0;
     if (left) vx = -currentSpeed;
@@ -238,16 +262,16 @@ export class PlayerController {
       this._dustTimer += delta;
       if (this._dustTimer >= this._dustInterval) {
         this._dustTimer = 0;
-        const px = this.playerContainer.x + (Math.random() - 0.5) * 14;
-        const py = this.playerContainer.y + feetOffY + (Math.random() - 0.5) * 6;
-        const dust = this.scene.add.image(px, py, 'dust_particle');
-        const size = 0.3 + Math.random() * 0.5;
+          const px = this.playerContainer.x + (this.rng.rand() - 0.5) * 14;
+          const py = this.playerContainer.y + feetOffY + (this.rng.rand() - 0.5) * 6;
+          const dust = this.scene.add.image(px, py, 'dust_particle');
+          const size = 0.3 + this.rng.rand() * 0.5;
         dust.setScale(size);
-        dust.setAlpha(0.5 + Math.random() * 0.3);
+          dust.setAlpha(0.5 + this.rng.rand() * 0.3);
         dust.setTint(tint);
         dust.setDepth(this.playerContainer.y + 1);
         dust.bornAt = this.scene.time.now;
-        dust.maxLife = 200 + Math.random() * 200; // 200-400ms
+          dust.maxLife = 200 + this.rng.rand() * 200; // 200-400ms
         this.trailMarks.push(dust);
       }
 
@@ -255,7 +279,7 @@ export class PlayerController {
       this.trailTimer += delta;
       if (this.trailTimer >= this.trailInterval) {
         this.trailTimer = 0;
-        const px = this.playerContainer.x + (Math.random() - 0.5) * 4;
+        const px = this.playerContainer.x + (this.rng.rand() - 0.5) * 4;
         const py = this.playerContainer.y + feetOffY;
         const mark = this.scene.add.image(px, py, 'footprint');
         mark.setAlpha(0.25);

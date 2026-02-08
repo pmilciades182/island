@@ -23,6 +23,19 @@ class GameScene extends Phaser.Scene {
     this.ready = false;
   }
 
+  getDefaultPlayer() {
+    return {
+      x: 14198.63,
+      y: 5096.35,
+      health: 100,
+      maxHealth: 100,
+      stamina: 100,
+      maxStamina: 100,
+      attributes: { strength: 5, agility: 5, intelligence: 5, endurance: 5 },
+      inventory: []
+    };
+  }
+
   preload() {
     const base = 'assets/lpc_entry/png';
 
@@ -117,7 +130,8 @@ class GameScene extends Phaser.Scene {
 
     // Step 2: Generate terrain (0% - 50%)
     setStep('Generating terrain...', 0.05);
-    this.generator = new IslandGenerator(0.42, WORLD_W, 2.5);
+    const worldSeed = 0.42; // fixed seed for deterministic world generation
+    this.generator = new IslandGenerator(worldSeed, WORLD_W, 2.5);
 
     await this.generator.generate((prog) => {
       setStep('Generating terrain...', 0.05 + prog * 0.45);
@@ -126,7 +140,7 @@ class GameScene extends Phaser.Scene {
 
     // Step 3: Render texture (50% - 90%)
     setStep('Rendering texture...', 0.50);
-    const renderer = new TerrainRenderer(this);
+    const renderer = new TerrainRenderer(this, worldSeed);
     this.terrainImage = await renderer.render(this.generator.data, 8000, 2.5, (prog) => {
       setStep('Rendering texture...', 0.50 + prog * 0.40);
     });
@@ -149,9 +163,9 @@ class GameScene extends Phaser.Scene {
     this.soundManager = new SoundManager();
     this.soundManager.init();
 
-    this.vegetation = new VegetationManager(this, this.generator.vegetation);
+    this.vegetation = new VegetationManager(this, this.generator.vegetation, worldSeed);
     this.animManager = new AnimationManager(this);
-    this.playerController = new PlayerController(this, this.generator, this.soundManager);
+    this.playerController = new PlayerController(this, this.generator, this.soundManager, worldSeed);
     this.taskDistributor = new TaskDistributor(this);
     this.proximityManager = new ProximityManager(this, this.playerController.playerContainer, this.vegetation, this.generator, this.taskDistributor, { radius: 128 });
 
@@ -159,7 +173,7 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
     this.cameras.main.startFollow(this.playerController.playerContainer, false, 0.15, 0.15);
     this.cameras.main.fadeIn(500, 0, 0, 0);
-    this.dayNight = new DayNightCycle(this);
+    this.dayNight = new DayNightCycle(this, worldSeed);
     this.health = p.health;
     this.maxHealth = p.maxHealth;
     this.stamina = p.stamina;
@@ -277,11 +291,12 @@ class GameScene extends Phaser.Scene {
       }
     }
     if (moveState.moving) {
-      const rate = moveState.sprinting ? 16 : 10;
+      const baseRate = 10;
+      const speedScale = moveState.sprinting ? 1.4 : 1.0; // sprint animations 40% faster
       this.playerController.playerLayers.forEach(s => {
-        if (s.anims.currentAnim) s.anims.currentAnim.frameRate = rate;
+        if (s.anims.currentAnim) s.anims.currentAnim.frameRate = Math.round(baseRate * speedScale);
       });
-      this.animManager.playWalk(moveState.facing, this.playerController.playerLayers);
+      this.animManager.playWalk(moveState.facing, this.playerController.playerLayers, speedScale);
     } else {
       this.animManager.setIdle(moveState.facing, this.playerController.playerLayers);
     }

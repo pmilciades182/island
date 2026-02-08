@@ -68,13 +68,24 @@ export class AnimationManager {
     });
   }
 
-  playWalk(dir, sprites) {
+  // speedScale: 1.0 = normal, >1 faster
+  playWalk(dir, sprites, speedScale = 1) {
     const walkKeys = ['body_walk', 'feet_walk', 'legs_walk', 'torso_walk', 'head_walk'];
 
     sprites.forEach((s, i) => {
       const animKey = `${walkKeys[i]}_${dir}`;
-      if (s.anims.currentAnim?.key !== animKey) {
-        s.play(animKey);
+      // Always request play (restart if needed) so a previously-stopped
+      // or paused animation doesn't remain frozen when movement resumes.
+      try {
+        s.play(animKey, true);
+        if (s.anims && typeof s.anims.setTimeScale === 'function') {
+          s.anims.setTimeScale(speedScale);
+        } else if (s.anims) {
+          s.anims.timeScale = speedScale;
+        }
+      } catch (e) {
+        // Defensive: if the animation doesn't exist or other issue,
+        // silently ignore so game doesn't crash.
       }
     });
   }

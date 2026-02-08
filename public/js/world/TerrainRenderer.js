@@ -1,9 +1,10 @@
 import { WorldConfig } from './WorldConfig.js';
 
 export class TerrainRenderer {
-    constructor(scene) {
+    constructor(scene, seed) {
         this.scene = scene;
-        this.noise = window.Noise ? new window.Noise(Math.random()) : null;
+        const nseed = (typeof seed !== 'undefined') ? seed : Math.random();
+        this.noise = window.Noise ? new window.Noise(nseed) : null;
     }
 
     // Inline fbm — no object allocation
@@ -82,13 +83,22 @@ export class TerrainRenderer {
 
                 // Fast edge detection — sample cardinal + diagonal at distance 2 in half-res space
                 let diffCount = 0;
+                let hasShallowNeighbor = false;
+                let hasSandNeighbor = false;
+                let deepNeighborCount = 0;
+                let shallowNeighborCount = 0;
                 for (let dy = -edgeDist; dy <= edgeDist; dy++) {
                     const ny = Math.max(0, Math.min(fullSize - 1, gy + dy * scale));
                     const rowOff = ny * fullSize;
                     for (let dx = -edgeDist; dx <= edgeDist; dx++) {
                         if (dx === 0 && dy === 0) continue;
                         const nx = Math.max(0, Math.min(fullSize - 1, gx + dx * scale));
-                        if (gridData[rowOff + nx] !== type) diffCount++;
+                        const neighborType = gridData[rowOff + nx];
+                        if (neighborType !== type) diffCount++;
+                        if (neighborType === T.SHALLOW_WATER) hasShallowNeighbor = true;
+                        if (neighborType === T.SAND) hasSandNeighbor = true;
+                        if (neighborType === T.DEEP_WATER) deepNeighborCount++;
+                        if (neighborType === T.SHALLOW_WATER) shallowNeighborCount++;
                     }
                 }
                 const edgeRaw = diffCount / edgeArea;
@@ -98,12 +108,19 @@ export class TerrainRenderer {
                 let noiseValue;
 
                 if (type === T.DEEP_WATER || type === T.SHALLOW_WATER) {
+                    // Much larger water swirls for deep/shallow water (lower frequency)
                     noiseValue =
-                        this._fbm(x, y, 0.007, 3, 0.55, 2.0) * 0.7 +
-                        this._fbm(x + 80, y + 120, 0.024, 2, 0.5, 2.0) * 0.3;
+                        this._fbm(x, y, 0.0022, 3, 0.55, 2.0) * 0.72 +
+                        this._fbm(x + 80, y + 120, 0.010, 2, 0.5, 2.0) * 0.38;
+                    // stronger very-low-frequency layer to create very large clumps
+                    noiseValue += this._fbm(x + 300, y + 500, 0.0009, 1, 0.5, 2.0) * 0.28;
                 } else if (type === T.SAND) {
-                    noiseValue = this._warped(x, y, 1.2, 0.006);
-                    noiseValue += noise.simplex2(x * 0.003, y * 0.016) * 0.3;
+                    // Make sand clumps ~400% larger: increase warp strength and dramatically lower warp scale
+                    noiseValue = this._warped(x, y, 3.0, 0.00075);
+                    // lower-frequency detail to emphasize big patches
+                    noiseValue += noise.simplex2(x * 0.0006, y * 0.0032) * 0.45;
+                    // stronger very-low-frequency bump to accentuate very large patches
+                    noiseValue += this._fbm(x + 200, y + 200, 0.001, 1, 0.5, 2.0) * 0.4;
                 } else if (type === T.GRASS_LIGHT || type === T.GRASS_DARK) {
                     noiseValue = this._warped(x, y, 0.9, 0.03);
                     noiseValue = noiseValue * 0.7 +
@@ -130,7 +147,52 @@ export class TerrainRenderer {
                 let ci = (norm * (palette.length - 0.001)) | 0;
                 if (ci < 0 || ci >= palette.length) ci = 0;
 
-                const color = palette[ci] || defaultPalette[0];
+                let color = palette[ci] || defaultPalette[0];
+
+                // Water gradient: blend shallow -> deep only for shallow pixels near deep neighbors.
+                if (type === T.SHALLOW_WATER) {
+                    const shallowPal = palettes[T.SHALLOW_WATER] || palettes[1];
+                    const deepPal = palettes[T.DEEP_WATER] || palettes[0];
+                    const sCi = (norm * (shallowPal.length - 0.001)) | 0;
+                    const dCi = (norm * (deepPal.length - 0.001)) | 0;
+                    const cShallow = shallowPal[Math.max(0, Math.min(shallowPal.length - 1, sCi))] || defaultPalette[0];
+                    const cDeep = deepPal[Math.max(0, Math.min(deepPal.length - 1, dCi))] || defaultPalette[0];
+
+                    // neighbor ratio of deep tiles around this pixel
+                    const neighborRatioDeep = deepNeighborCount / edgeArea;
+
+                    // Confine blending strongly to edge area using edgeStrength
+                    let blendDepth = edgeStrength * neighborRatioDeep * 2.3;
+
+                    // subtle per-pixel noise to avoid banding
+                    const wNoise = (noise.simplex2(x * 0.12, y * 0.12) + 1) * 0.5;
+                    blendDepth = Math.max(0, Math.min(1, blendDepth * 0.85 + wNoise * 0.15));
+
+                    const r = Math.round(cShallow[0] * (1 - blendDepth) + cDeep[0] * blendDepth);
+                    const g = Math.round(cShallow[1] * (1 - blendDepth) + cDeep[1] * blendDepth);
+                    const b = Math.round(cShallow[2] * (1 - blendDepth) + cDeep[2] * blendDepth);
+                    color = [r, g, b];
+                }
+
+                // Shore transition: if sand borders shallow water (either pixel
+                // is sand with shallow neighbor, or shallow water with sand neighbor)
+                if ((type === T.SAND && hasShallowNeighbor) || (type === T.SHALLOW_WATER && hasSandNeighbor)) {
+                    // shoreFactor from edgeStrength biased up
+                    const shoreFactor = Math.min(1, edgeStrength * 2.2);
+                    // bubble noise: higher frequency and bias to create stronger white pockets
+                    const bubble = (noise.simplex2(x * 0.18, y * 0.18) + 1) * 0.5; // 0..1
+                    // bias towards brighter results (exponent < 1 boosts mid-low values)
+                    const bubbleMask = Math.pow(bubble, 0.6);
+                    // more aggressive blend, clamp to 1
+                    let blend = shoreFactor * bubbleMask * 1.6;
+                    if (blend > 1) blend = 1;
+
+                    // mix towards white (255) — stronger pull for more pronounced foam
+                    const r = Math.round((color[0] * (1 - blend)) + 255 * blend);
+                    const g = Math.round((color[1] * (1 - blend)) + 255 * blend);
+                    const b = Math.round((color[2] * (1 - blend)) + 255 * blend);
+                    color = [r, g, b];
+                }
 
                 const idx = (y * size + x) << 2;
                 data[idx] = color[0];

@@ -1,6 +1,9 @@
+import { createRNG } from '../util/rng.js';
+
 export class DayNightCycle {
-  constructor(scene) {
+  constructor(scene, seed = 0) {
     this.scene = scene;
+    this.rng = createRNG(seed + 3);
     const WORLD_W = scene.WORLD_W;
     const WORLD_H = scene.WORLD_H;
 
@@ -19,15 +22,15 @@ export class DayNightCycle {
     const cloudG = scene.add.graphics();
     cloudG.fillStyle(0xFFFFFF, 1);
     for (let i = 0; i < 30; i++) {
-      const cx = Math.random() * cloudTexSize;
-      const cy = Math.random() * cloudTexSize;
+      const cx = this.rng.rand() * cloudTexSize;
+      const cy = this.rng.rand() * cloudTexSize;
       // Each cloud blob: 3-5 overlapping circles
-      const baseR = 80 + Math.random() * 240; // 80-320px radius
-      const blobs = 3 + Math.floor(Math.random() * 3);
+      const baseR = 80 + this.rng.rand() * 240; // 80-320px radius
+      const blobs = 3 + Math.floor(this.rng.rand() * 3);
       for (let j = 0; j < blobs; j++) {
-        const ox = (Math.random() - 0.5) * baseR * 0.8;
-        const oy = (Math.random() - 0.5) * baseR * 0.6;
-        const r = baseR * (0.5 + Math.random() * 0.5);
+        const ox = (this.rng.rand() - 0.5) * baseR * 0.8;
+        const oy = (this.rng.rand() - 0.5) * baseR * 0.6;
+        const r = baseR * (0.5 + this.rng.rand() * 0.5);
         cloudG.fillCircle(cx + ox, cy + oy, r);
       }
     }
