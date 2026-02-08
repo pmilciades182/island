@@ -1,4 +1,4 @@
-import { WorldConfig } from '../world/WorldConfig.js';
+import * as Objects from '../objects/index.js';
 
 /**
  * InteractPopup - Shows object information when player interacts with E key
@@ -87,47 +87,36 @@ export class InteractPopup {
   }
 
   _getObjectName(type) {
-    const names = {
-      [WorldConfig.OBJECTS.TREE]: 'Tree',
-      [WorldConfig.OBJECTS.ROCK_SMALL]: 'Small Rock',
-      [WorldConfig.OBJECTS.ROCK_MEDIUM]: 'Medium Rock',
-      [WorldConfig.OBJECTS.ROCK_LARGE]: 'Large Rock',
-      [WorldConfig.OBJECTS.FLOWER]: 'Flower',
-      [WorldConfig.OBJECTS.BUSH_SAND]: 'Sand Bush',
-      [WorldConfig.OBJECTS.BUSH_GRASS]: 'Grass Bush',
-      [WorldConfig.OBJECTS.BUSH_DIRT]: 'Dirt Bush',
-    };
-    return names[type] || 'Unknown Object';
+    const key = Object.keys(Objects.IDS).find(k => Objects.IDS[k] === type);
+    if (!key) return 'Unknown Object';
+    return (Objects.CONFIG[key] && Objects.CONFIG[key].name) || (Objects[`${toPascal(key)}Def`] && Objects[`${toPascal(key)}Def`].displayName) || 'Unknown Object';
   }
 
   _getObjectIcon(type) {
-    const icons = {
-      [WorldConfig.OBJECTS.TREE]: '🌳',
-      [WorldConfig.OBJECTS.ROCK_SMALL]: '🪨',
-      [WorldConfig.OBJECTS.ROCK_MEDIUM]: '🪨',
-      [WorldConfig.OBJECTS.ROCK_LARGE]: '🪨',
-      [WorldConfig.OBJECTS.FLOWER]: '🌸',
-      [WorldConfig.OBJECTS.BUSH_SAND]: '🌿',
-      [WorldConfig.OBJECTS.BUSH_GRASS]: '🌿',
-      [WorldConfig.OBJECTS.BUSH_DIRT]: '🌿',
+    const key = Object.keys(Objects.IDS).find(k => Objects.IDS[k] === type);
+    if (!key) return '❓';
+    const def = Objects[`${toPascal(key)}Def`];
+    if (def && def.icon) return def.icon;
+    const emojiMap = {
+      TREE: '🌳',
+      ROCK_SMALL: '🪨',
+      ROCK_MEDIUM: '🪨',
+      ROCK_LARGE: '🪨',
+      FLOWER: '🌸',
+      BUSH_SAND: '🌿',
+      BUSH_GRASS: '🌿',
+      BUSH_DIRT: '🌿'
     };
-    return icons[type] || '❓';
+    return emojiMap[key] || '❓';
   }
 
   _getObjectDescription(type) {
-    const descriptions = {
-      [WorldConfig.OBJECTS.TREE]: 'A tall tree. Can be chopped for wood.',
-      [WorldConfig.OBJECTS.ROCK_SMALL]: 'A small rock. Can be picked up.',
-      [WorldConfig.OBJECTS.ROCK_MEDIUM]: 'A medium-sized rock. Can be mined for stone.',
-      [WorldConfig.OBJECTS.ROCK_LARGE]: 'A large rock formation. Requires a pickaxe.',
-      [WorldConfig.OBJECTS.FLOWER]: 'A colorful flower. Can be gathered.',
-      [WorldConfig.OBJECTS.BUSH_SAND]: 'A hardy bush growing in sandy soil.',
-      [WorldConfig.OBJECTS.BUSH_GRASS]: 'A leafy bush found in grassy areas.',
-      [WorldConfig.OBJECTS.BUSH_DIRT]: 'A sturdy bush growing in rich soil.',
-    };
-    return descriptions[type] || 'An unknown object.';
+    const key = Object.keys(Objects.IDS).find(k => Objects.IDS[k] === type);
+    if (!key) return 'An unknown object.';
+    const def = Objects[`${toPascal(key)}Def`];
+    return (def && def.description) || `A ${Objects.CONFIG[key] && Objects.CONFIG[key].name || 'object'}.`;
   }
-
+  
   /**
    * Open popup with object information
    * @param {Object} obj - The object to display info for
@@ -204,4 +193,8 @@ export class InteractPopup {
       this.popupEl.parentNode.removeChild(this.popupEl);
     }
   }
+}
+
+function toPascal(s) {
+  return s.toLowerCase().split('_').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
 }

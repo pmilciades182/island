@@ -1,3 +1,5 @@
+import * as Objects from '../objects/index.js';
+
 export const WorldConfig = {
     // World Dimensions
     SIZE: 20000,
@@ -73,24 +75,24 @@ export const WorldConfig = {
         ]
     },
 
-    // Vegetation & Objects
+    // Vegetation & Objects (delegated to object modules)
     OBJECTS: {
-        TREE: 1,
-        ROCK_SMALL: 2,
-        ROCK_MEDIUM: 3,
-        ROCK_LARGE: 4,
-        FLOWER: 5,
-        BUSH_SAND: 6,
-        BUSH_GRASS: 7,
-        BUSH_DIRT: 8,
+        TREE: Objects.IDS.TREE,
+        ROCK_SMALL: Objects.IDS.ROCK_SMALL,
+        ROCK_MEDIUM: Objects.IDS.ROCK_MEDIUM,
+        ROCK_LARGE: Objects.IDS.ROCK_LARGE,
+        FLOWER: Objects.IDS.FLOWER,
+        BUSH_SAND: Objects.IDS.BUSH_SAND,
+        BUSH_GRASS: Objects.IDS.BUSH_GRASS,
+        BUSH_DIRT: Objects.IDS.BUSH_DIRT,
 
-        TREE_SCALE: 4.0,
-        ALLOWED_TERRAINS_TREES: [3, 4],
-        ALLOWED_TERRAINS_ROCKS: [2, 3, 5], // Sand, Grass Light, Dirt
-        ALLOWED_TERRAINS_FLOWERS: [3, 4], // Grass Light, Grass Dark
-        ALLOWED_TERRAINS_BUSH_SAND: [2],       // Sand
-        ALLOWED_TERRAINS_BUSH_GRASS: [3, 4],   // Grass Light, Grass Dark
-        ALLOWED_TERRAINS_BUSH_DIRT: [5]         // Dirt
+        TREE_SCALE: Objects.CONFIG.TREE.scale,
+        ALLOWED_TERRAINS_TREES: Objects.CONFIG.TREE.allowedTerrains,
+        ALLOWED_TERRAINS_ROCKS: Objects.CONFIG.ROCK_SMALL.allowedTerrains,
+        ALLOWED_TERRAINS_FLOWERS: Objects.CONFIG.FLOWER.allowedTerrains,
+        ALLOWED_TERRAINS_BUSH_SAND: Objects.CONFIG.BUSH_SAND.allowedTerrains,
+        ALLOWED_TERRAINS_BUSH_GRASS: Objects.CONFIG.BUSH_GRASS.allowedTerrains,
+        ALLOWED_TERRAINS_BUSH_DIRT: Objects.CONFIG.BUSH_DIRT.allowedTerrains
     },
 
     // Bush color palettes per terrain (harmonized with terrain palettes)

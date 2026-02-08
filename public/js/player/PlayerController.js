@@ -1,4 +1,5 @@
 import { WorldConfig } from '../world/WorldConfig.js';
+import * as Objects from '../objects/index.js';
 
 export class PlayerController {
   constructor(scene, generator, soundManager = null) {
@@ -105,14 +106,14 @@ export class PlayerController {
         if (dist > radius) continue;
 
         const obj = veg[gy * gs + gx];
-        if (obj === WorldConfig.OBJECTS.TREE || obj === WorldConfig.OBJECTS.ROCK_LARGE) {
+        if (obj === Objects.IDS.TREE || obj === Objects.IDS.ROCK_LARGE) {
           foundSolid = true;
         } else if (
-          obj === WorldConfig.OBJECTS.ROCK_SMALL ||
-          obj === WorldConfig.OBJECTS.ROCK_MEDIUM ||
-          obj === WorldConfig.OBJECTS.BUSH_SAND ||
-          obj === WorldConfig.OBJECTS.BUSH_GRASS ||
-          obj === WorldConfig.OBJECTS.BUSH_DIRT
+          obj === Objects.IDS.ROCK_SMALL ||
+          obj === Objects.IDS.ROCK_MEDIUM ||
+          obj === Objects.IDS.BUSH_SAND ||
+          obj === Objects.IDS.BUSH_GRASS ||
+          obj === Objects.IDS.BUSH_DIRT
         ) {
           foundSlow = true;
         }

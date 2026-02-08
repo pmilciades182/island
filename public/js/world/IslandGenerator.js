@@ -1,4 +1,5 @@
 import { WorldConfig } from './WorldConfig.js';
+import * as Objects from '../objects/index.js';
 
 export class IslandGenerator {
     constructor(seed, worldSize, tileSize) {
@@ -21,20 +22,20 @@ export class IslandGenerator {
 
         // Pre-compute allowed terrain lookups as bitfields
         const T = WorldConfig.TERRAIN;
-        const O = WorldConfig.OBJECTS;
         const treeTerrain = new Uint8Array(6);
         const rockTerrain = new Uint8Array(6);
         const flowerTerrain = new Uint8Array(6);
         const bushSandT = new Uint8Array(6);
         const bushGrassT = new Uint8Array(6);
         const bushDirtT = new Uint8Array(6);
-        
-        O.ALLOWED_TERRAINS_TREES.forEach(t => treeTerrain[t] = 1);
-        O.ALLOWED_TERRAINS_ROCKS.forEach(t => rockTerrain[t] = 1);
-        O.ALLOWED_TERRAINS_FLOWERS.forEach(t => flowerTerrain[t] = 1);
-        O.ALLOWED_TERRAINS_BUSH_SAND.forEach(t => bushSandT[t] = 1);
-        O.ALLOWED_TERRAINS_BUSH_GRASS.forEach(t => bushGrassT[t] = 1);
-        O.ALLOWED_TERRAINS_BUSH_DIRT.forEach(t => bushDirtT[t] = 1);
+
+        // read allowed terrains from objects config
+        Objects.CONFIG.TREE.allowedTerrains.forEach(t => treeTerrain[t] = 1);
+        Objects.CONFIG.ROCK_SMALL.allowedTerrains.forEach(t => rockTerrain[t] = 1);
+        Objects.CONFIG.FLOWER.allowedTerrains.forEach(t => flowerTerrain[t] = 1);
+        Objects.CONFIG.BUSH_SAND.allowedTerrains.forEach(t => bushSandT[t] = 1);
+        Objects.CONFIG.BUSH_GRASS.allowedTerrains.forEach(t => bushGrassT[t] = 1);
+        Objects.CONFIG.BUSH_DIRT.allowedTerrains.forEach(t => bushDirtT[t] = 1);
 
         const invW = 2.0 / width;
         const invH = 2.0 / height;
@@ -92,7 +93,7 @@ export class IslandGenerator {
                 if (treeTerrain[tileType]) {
                     const tn = noise.simplex2(nx * 400, ny * 400);
                     if (tn > 0.96) {
-                        veg[idx] = O.TREE;
+                        veg[idx] = Objects.IDS.TREE;
                         continue;
                     }
                 }
@@ -103,7 +104,7 @@ export class IslandGenerator {
                     if (rn > 0.985) {
                         const hash = ((x * 73856093) ^ (y * 19349663)) * 83492791;
                         const rand = (hash & 0xFFFF) / 65536.0;
-                        veg[idx] = rand > 0.9 ? O.ROCK_LARGE : rand > 0.6 ? O.ROCK_MEDIUM : O.ROCK_SMALL;
+                        veg[idx] = rand > 0.9 ? Objects.IDS.ROCK_LARGE : rand > 0.6 ? Objects.IDS.ROCK_MEDIUM : Objects.IDS.ROCK_SMALL;
                         continue;
                     }
                 }
@@ -112,7 +113,7 @@ export class IslandGenerator {
                 if (flowerTerrain[tileType]) {
                     const fn = noise.simplex2(nx * 600 + 200, ny * 600 + 200);
                     if (fn > 0.9925) {
-                        veg[idx] = O.FLOWER;
+                        veg[idx] = Objects.IDS.FLOWER;
                         continue;
                     }
                 }
@@ -120,9 +121,9 @@ export class IslandGenerator {
                 // Bushes
                 const bn = noise.simplex2(nx * 550 + 300, ny * 550 + 300);
                 if (bn > 0.9925) {
-                    if (bushSandT[tileType]) veg[idx] = O.BUSH_SAND;
-                    else if (bushGrassT[tileType]) veg[idx] = O.BUSH_GRASS;
-                    else if (bushDirtT[tileType]) veg[idx] = O.BUSH_DIRT;
+                    if (bushSandT[tileType]) veg[idx] = Objects.IDS.BUSH_SAND;
+                    else if (bushGrassT[tileType]) veg[idx] = Objects.IDS.BUSH_GRASS;
+                    else if (bushDirtT[tileType]) veg[idx] = Objects.IDS.BUSH_DIRT;
                 }
             }
         }

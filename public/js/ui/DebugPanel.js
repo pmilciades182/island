@@ -1,4 +1,5 @@
 import { WorldConfig } from '../world/WorldConfig.js';
+import * as Objects from '../objects/index.js';
 
 export class DebugPanel {
   constructor(scene) {
@@ -108,7 +109,7 @@ export class DebugPanel {
         }
       }
 
-      const vegNames = Object.fromEntries(Object.entries(WorldConfig.OBJECTS).map(([k, v]) => [v, k]));
+      const vegNames = Object.fromEntries(Object.entries(Objects.IDS).map(([k, v]) => [v, k]));
       const terrainNames = Object.fromEntries(Object.entries(WorldConfig.TERRAIN).map(([k, v]) => [v, k]));
 
       const closestName = closest ? (vegNames[closest.type] || terrainNames[closest.type] || 'Unknown') : 'None';
