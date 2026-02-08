@@ -3,6 +3,18 @@
  * Shows a pulsing yellow light above the closest interactable object
  */
 export class InteractIndicator {
+  // Offset Y por tipo de objeto (WorldConfig.OBJECTS)
+  static OFFSETS = {
+    1: -48,  // TREE - grande
+    2: -12,  // ROCK_SMALL
+    3: -20,  // ROCK_MEDIUM
+    4: -32,  // ROCK_LARGE
+    5: -8,   // FLOWER - muy pequeño
+    6: -14,  // BUSH_SAND
+    7: -14,  // BUSH_GRASS
+    8: -14,  // BUSH_DIRT
+  };
+
   constructor(scene) {
     this.scene = scene;
     this._currentInteractiveObject = null;
@@ -40,34 +52,49 @@ export class InteractIndicator {
       .setVisible(false)
       .setAlpha(0);
 
-    // Outer soft glow (largest)
+    // Inner container for float animation
+    this.innerContainer = this.scene.add.container(0, 0);
+
+    // Outer soft glow (50% smaller)
     const outerGlow = this.scene.add.graphics();
     outerGlow.fillStyle(indicatorColor, 0.15);
-    outerGlow.fillCircle(0, 0, 24);
+    outerGlow.fillCircle(0, 0, 12);
 
     // Middle glow
     const midGlow = this.scene.add.graphics();
-    midGlow.fillStyle(indicatorColor, 0.3);
-    midGlow.fillCircle(0, 0, 16);
+    midGlow.fillStyle(indicatorColor, 0.35);
+    midGlow.fillCircle(0, 0, 8);
 
     // Inner glow
     const innerGlow = this.scene.add.graphics();
-    innerGlow.fillStyle(indicatorColor, 0.5);
-    innerGlow.fillCircle(0, 0, 10);
+    innerGlow.fillStyle(indicatorColor, 0.6);
+    innerGlow.fillCircle(0, 0, 5);
 
     // Bright core
     const core = this.scene.add.graphics();
-    core.fillStyle(0xFFFFFF, 0.9);
-    core.fillCircle(0, 0, 5);
+    core.fillStyle(0xFFFFFF, 0.95);
+    core.fillCircle(0, 0, 3);
 
-    this.container.add([outerGlow, midGlow, innerGlow, core]);
+    this.innerContainer.add([outerGlow, midGlow, innerGlow, core]);
+    this.container.add(this.innerContainer);
   }
 
   _createPulseTween() {
+    // Gentle floating animation
     this.scene.tweens.add({
-      targets: this.container,
-      scale: 1.2,
-      duration: 800,
+      targets: this.innerContainer,
+      y: -6,
+      duration: 600,
+      ease: 'Sine.InOut',
+      yoyo: true,
+      repeat: -1
+    });
+
+    // Subtle pulse animation
+    this.scene.tweens.add({
+      targets: this.innerContainer,
+      scale: 1.15,
+      duration: 400,
       ease: 'Sine.InOut',
       yoyo: true,
       repeat: -1
@@ -88,7 +115,8 @@ export class InteractIndicator {
 
   _showIndicator(target) {
     const targetX = target.x;
-    const targetY = target.y - 48; // Offset above object
+    const offsetY = InteractIndicator.OFFSETS[target.type] || -16;
+    const targetY = target.y + offsetY;
 
     const isNewTarget = !this._currentInteractiveObject ||
       this._currentInteractiveObject.gridIndex !== target.gridIndex;
@@ -144,6 +172,7 @@ export class InteractIndicator {
 
   destroy() {
     this.scene.tweens.killTweensOf(this.container);
+    this.scene.tweens.killTweensOf(this.innerContainer);
     this.container.destroy();
   }
 }

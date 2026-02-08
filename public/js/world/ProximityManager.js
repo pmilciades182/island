@@ -7,6 +7,15 @@ export class ProximityManager {
     this.taskDistributor = taskDistributor;
     this.radius = config.radius || 100; // Default radius
     this.debugGraphics = scene.add.graphics().setDepth(1000);
+    this.showPerimeter = true;
+  }
+
+  togglePerimeter() {
+    this.showPerimeter = !this.showPerimeter;
+    if (!this.showPerimeter) {
+      this.debugGraphics.clear();
+    }
+    return this.showPerimeter;
   }
 
   update() {
@@ -50,7 +59,8 @@ export class ProximityManager {
 
   drawDebugPerimeter() {
     this.debugGraphics.clear();
+    if (!this.showPerimeter) return;
     this.debugGraphics.lineStyle(1, 0x00ff00, 0.5);
     this.debugGraphics.strokeCircle(this.player.x, this.player.y, this.radius);
-    }
+  }
 }

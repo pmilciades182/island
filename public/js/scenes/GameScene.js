@@ -217,6 +217,18 @@ class GameScene extends Phaser.Scene {
           setTimeout(() => copyBtn.textContent = 'Copy', 1000);
         };
         actionsDiv.appendChild(copyBtn);
+
+        // Add toggle button for PROXIMITY section
+        if (title === 'PROXIMITY') {
+          const toggleBtn = document.createElement('button');
+          toggleBtn.textContent = '⭕ Hide';
+          toggleBtn.onclick = () => {
+            const visible = this.proximityManager.togglePerimeter();
+            toggleBtn.textContent = visible ? '⭕ Hide' : '○ Show';
+          };
+          actionsDiv.appendChild(toggleBtn);
+        }
+
         details.appendChild(summary);
         details.appendChild(contentDiv);
         details.appendChild(actionsDiv);
