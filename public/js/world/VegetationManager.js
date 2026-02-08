@@ -93,14 +93,7 @@ export class VegetationManager {
     r3.generateTexture('rock_large', 64, 64);
     r3.destroy();
 
-    const bushSandColors = (Objects.CONFIG.BUSH_SAND && Objects.COLORS && Objects.COLORS.BUSH_SAND) ? Objects.COLORS.BUSH_SAND : Objects.COLORS || Objects.CONFIG.BUSH_SAND && Objects.COLORS ? Objects.COLORS : null;
-    const sandColors = Objects.COLORS && Objects.COLORS.BUSH_SAND ? Objects.COLORS.BUSH_SAND : (Objects.COLORS ? Objects.COLORS : null);
-    const sandPalette = Objects.CONFIG.BUSH_SAND && Objects.CONFIG.BUSH_SAND.colors ? Objects.CONFIG.BUSH_SAND.colors : (Objects.BUSH_COLORS ? Objects.BUSH_COLORS.SAND : null);
-    const sandSource = Objects.CONFIG.BUSH_SAND && Objects.CONFIG.BUSH_SAND.colors ? Objects.CONFIG.BUSH_SAND.colors : (Objects.COLORS && Objects.COLORS.BUSH_SAND ? Objects.COLORS.BUSH_SAND : null);
-    const sandPaletteFinal = Objects.CONFIG.BUSH_SAND && Objects.CONFIG.BUSH_SAND.colors ? Objects.CONFIG.BUSH_SAND.colors : (Objects.COLORS && Objects.COLORS.BUSH_SAND ? Objects.COLORS.BUSH_SAND : Objects.CONFIG.BUSH_SAND && Objects.CONFIG.BUSH_SAND.COLORS ? Objects.CONFIG.BUSH_SAND.COLORS : null);
-    const bushSand = Objects.CONFIG.BUSH_SAND;
-    const bushSandColorsFinal = Objects.COLORS && Objects.COLORS.BUSH_SAND ? Objects.COLORS.BUSH_SAND : (Objects.CONFIG.BUSH_SAND && Objects.CONFIG.BUSH_SAND.colors ? Objects.CONFIG.BUSH_SAND.colors : null);
-    const finalSandPalette = bushSandColorsFinal || Objects.CONFIG.BUSH_SAND && Objects.CONFIG.BUSH_SAND.colors || [0xA8B06A, 0xB5A86B, 0x8E9960, 0xC2B87A];
+    const finalSandPalette = (Objects.CONFIG.BUSH_SAND && Objects.CONFIG.BUSH_SAND.colors) || [0xA8B06A, 0xB5A86B, 0x8E9960, 0xC2B87A];
     finalSandPalette.forEach((color, i) => {
       const b = scene.add.graphics();
       // 1. Sombra en el suelo (un poco más alargada para base triangular)
@@ -149,7 +142,7 @@ export class VegetationManager {
     });
     
     // Bush Grass: round and leafy, taller (28x28)
-    const finalGrassPalette = (Objects.CONFIG.BUSH_GRASS && Objects.COLORS && Objects.COLORS.BUSH_GRASS) ? Objects.COLORS.BUSH_GRASS : (Objects.CONFIG.BUSH_GRASS && Objects.CONFIG.BUSH_GRASS.colors ? Objects.CONFIG.BUSH_GRASS.colors : [0x4A8C3F, 0x5DA84E, 0x3B7A34, 0x6BB85A]);
+    const finalGrassPalette = (Objects.CONFIG.BUSH_GRASS && Objects.CONFIG.BUSH_GRASS.colors) || [0x4A8C3F, 0x5DA84E, 0x3B7A34, 0x6BB85A];
     finalGrassPalette.forEach((color, i) => {
       const b = scene.add.graphics();
       b.fillStyle(0x000000, 0.25);
@@ -166,7 +159,7 @@ export class VegetationManager {
     });
 
     // Bush Dirt: gnarled woody shrub with twisted branches (32x28)
-    const finalDirtPalette = (Objects.CONFIG.BUSH_DIRT && Objects.COLORS && Objects.COLORS.BUSH_DIRT) ? Objects.COLORS.BUSH_DIRT : (Objects.CONFIG.BUSH_DIRT && Objects.CONFIG.BUSH_DIRT.colors ? Objects.CONFIG.BUSH_DIRT.colors : [0x6B7A3A, 0x5C6832, 0x7A8844, 0x4E5B2B]);
+    const finalDirtPalette = (Objects.CONFIG.BUSH_DIRT && Objects.CONFIG.BUSH_DIRT.colors) || [0x6B7A3A, 0x5C6832, 0x7A8844, 0x4E5B2B];
     finalDirtPalette.forEach((color, i) => {
       const b = scene.add.graphics();
       const dark = Phaser.Display.Color.IntegerToColor(color).darken(25).color;
@@ -199,11 +192,11 @@ export class VegetationManager {
     });
 
     // Flower Textures (16 colors)
-    const flowerPalette = Objects.COLORS && Objects.COLORS.FLOWER ? Objects.COLORS.FLOWER : (Objects.CONFIG.FLOWER && Objects.CONFIG.FLOWER.colors ? Objects.CONFIG.FLOWER.colors : [
+    const flowerPalette = (Objects.CONFIG.FLOWER && Objects.CONFIG.FLOWER.colors) || [
       0xE74C3C, 0xF39C12, 0xF1C40F, 0xE8DAEF, 0xAF7AC5, 0x5DADE2,
       0x48C9B0, 0x52BE80, 0xF8B88B, 0xEC7063, 0xF7DC6F, 0xBB8FCE,
       0x85C1E2, 0x76D7C4, 0xF5B7B1, 0xFAD7A0
-    ]);
+    ];
     flowerPalette.forEach((color, index) => {
       const f = scene.add.graphics();
       f.fillStyle(0x000000, 0.3);

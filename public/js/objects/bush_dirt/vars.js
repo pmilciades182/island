@@ -5,5 +5,4 @@ export const CONFIG = {
   allowedTerrains: [5],
   name: 'BushDirt'
 };
-
-export const COLORS = [0x6B7A3A, 0x5C6832, 0x7A8844, 0x4E5B2B];
+CONFIG.colors = [0x6B7A3A, 0x5C6832, 0x7A8844, 0x4E5B2B];

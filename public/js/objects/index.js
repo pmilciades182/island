@@ -29,12 +29,7 @@ export const CONFIG = {
   BUSH_DIRT: BushDirt.CONFIG
 };
 
-export const COLORS = {
-  FLOWER: Flower.COLORS,
-  BUSH_SAND: BushSand.COLORS,
-  BUSH_GRASS: BushGrass.COLORS,
-  BUSH_DIRT: BushDirt.COLORS
-};
+// Palettes are now available as `CONFIG.*.colors` on each object module
 
 export { default as TreeDef } from './tree/definition.js';
 export { default as RockSmallDef } from './rock_small/definition.js';
