@@ -1,9 +1,10 @@
 import { WorldConfig } from '../world/WorldConfig.js';
 
 export class PlayerController {
-  constructor(scene, generator) {
+  constructor(scene, generator, soundManager = null) {
     this.scene = scene;
     this.generator = generator;
+    this.soundManager = soundManager;
     this.speed = 180;
     this.sprinting = false;
 
@@ -195,6 +196,11 @@ export class PlayerController {
       : -1;
     const tint = this._dustTints[curBiome] || 0xc8b898;
     this._currentDustTint = tint;
+
+    // Footstep sounds
+    if (moving && this.soundManager) {
+      this.soundManager.playFootstep(curBiome, this.sprinting);
+    }
 
     // Foot offset depends on facing direction
     const feetOffY = (this.facing === 'left' || this.facing === 'right') ? 23 : 12;

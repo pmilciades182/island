@@ -10,6 +10,7 @@ import { ProximityManager } from '../world/ProximityManager.js';
 import { TaskDistributor } from '../world/TaskDistributor.js';
 import { InteractIndicator } from '../ui/InteractIndicator.js';
 import { InteractPopup } from '../ui/InteractPopup.js';
+import { SoundManager } from '../audio/SoundManager.js';
 
 class GameScene extends Phaser.Scene {
   constructor() {
@@ -144,9 +145,12 @@ class GameScene extends Phaser.Scene {
 
 
     // ── Managers ──
+    this.soundManager = new SoundManager();
+    this.soundManager.init();
+
     this.vegetation = new VegetationManager(this, this.generator.vegetation);
     this.animManager = new AnimationManager(this);
-    this.playerController = new PlayerController(this, this.generator);
+    this.playerController = new PlayerController(this, this.generator, this.soundManager);
     this.taskDistributor = new TaskDistributor(this);
     this.proximityManager = new ProximityManager(this, this.playerController.playerContainer, this.vegetation, this.generator, this.taskDistributor, { radius: 128 });
 
@@ -187,8 +191,10 @@ class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-E', () => {
       const target = this.interactIndicator.currentObject;
       if (this.interactPopup.isOpen) {
+        this.soundManager.playClick();
         this.interactPopup.close();
       } else if (target) {
+        this.soundManager.playInteract();
         this.interactPopup.open(target);
       }
     });
