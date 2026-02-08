@@ -178,6 +178,19 @@ class GameScene extends Phaser.Scene {
       else if (event.key === '-' || event.key === '_') this.dayNight.advance(-5000);
     });
 
+    // Interaction Indicator
+    this.interactIndicator = this.add.container(0, 0).setDepth(400000).setVisible(false);
+    const indBg = this.add.graphics();
+    indBg.fillStyle(0x0a0a0a, 0.8);
+    indBg.fillCircle(0, 0, 16);
+    indBg.lineStyle(1, 0xeeeeee, 0.9);
+    indBg.strokeCircle(0, 0, 16);
+    const indText = this.add.text(0, 0, 'E', {
+      fontFamily: '"Rubik", sans-serif', fontSize: '16px', color: '#ffffff', fontStyle: '600'
+    }).setOrigin(0.5);
+    this.interactIndicator.add([indBg, indText]);
+
+
     // ... (auto-save timer remains the same)
     this.saveTimer = this.time.addEvent({
       delay: 5000, callback: () => this.autoSave(), loop: true
@@ -256,10 +269,9 @@ class GameScene extends Phaser.Scene {
     if (!this.ready) return;
 
     this.proximityManager.update();
-
     const moveState = this.playerController.update(delta, this.stamina, this.maxStamina);
-
     const cam = this.cameras.main;
+
     if (moveState.moving) {
       cam.setLerp(0.06, 0.06);
     } else {
@@ -270,14 +282,35 @@ class GameScene extends Phaser.Scene {
       else cam.setLerp(0.2, 0.2);
     }
 
-    this.updateDebugPanel(time, delta, moveState);
+    const lastPayload = this.taskDistributor.lastPayload;
+    let closestInteractable = null;
+    let closestDistSq = Infinity;
+
+    if (lastPayload) {
+      const nearbyVeg = lastPayload.vegetation || [];
+      nearbyVeg.forEach(obj => {
+        const distSq = Phaser.Math.Distance.Squared(this.player.x, this.player.y, obj.x, obj.y);
+        if (distSq < closestDistSq) {
+          closestDistSq = distSq;
+          closestInteractable = obj;
+        }
+      });
+    }
+
+    if (closestInteractable) {
+      this.interactIndicator.setVisible(true);
+      this.interactIndicator.setPosition(closestInteractable.x, closestInteractable.y - 48);
+    } else {
+      this.interactIndicator.setVisible(false);
+    }
+    
+    this.updateDebugPanel(time, delta, moveState, lastPayload, closestInteractable, closestDistSq);
 
     if (moveState.sprinting) {
       this.stamina = Math.max(0, this.stamina - 20 * (delta / 1000));
     } else {
       this.stamina = Math.min(this.maxStamina, this.stamina + 10 * (delta / 1000));
     }
-
     if (moveState.moving) {
       const rate = moveState.sprinting ? 16 : 10;
       this.playerController.playerLayers.forEach(s => {
@@ -287,7 +320,6 @@ class GameScene extends Phaser.Scene {
     } else {
       this.animManager.setIdle(moveState.facing, this.playerController.playerLayers);
     }
-
     this.hud.update({
       health: this.health,
       maxHealth: this.maxHealth,
@@ -296,68 +328,43 @@ class GameScene extends Phaser.Scene {
       attributes: this.attributes,
       inventory: this.inventory
     });
-
     this.vegetation.update(this.playerController.x, this.playerController.y);
     const { timeStr } = this.dayNight.update(delta);
     this.hud.setTimeText(timeStr);
   }
 
-  updateDebugPanel(time, delta, moveState) {
+  updateDebugPanel(time, delta, moveState, lastPayload, closest, minDistanceSq) {
     if (!this._debugContentEls.size) return;
 
-    // --- Performance, Camera, Player, GPU, Render --- (updates are the same)
     this._debugFrameTimes.push(delta);
     if (this._debugFrameTimes.length > 60) this._debugFrameTimes.shift();
     const avgDelta = this._debugFrameTimes.reduce((a, b) => a + b, 0) / this._debugFrameTimes.length;
     const fps = Math.round(1000 / avgDelta);
-    this._debugContentEls.get('PERFORMANCE').textContent = `FPS: ${fps} ...`;
+    this._debugContentEls.get('PERFORMANCE').textContent = `FPS: ${fps} | Delta: ${delta.toFixed(2)}ms`;
 
     const cam = this.cameras.main;
-    this._debugContentEls.get('CAMERA').textContent = `Scroll: ${cam.scrollX.toFixed(2)}, ${cam.scrollY.toFixed(2)} ...`;
+    this._debugContentEls.get('CAMERA').textContent = `Scroll: ${cam.scrollX.toFixed(2)}, ${cam.scrollY.toFixed(2)}`;
     
     const pc = this.playerController.playerContainer;
-    this._debugContentEls.get('PLAYER').textContent = `Pos: ${pc.x.toFixed(2)}, ${pc.y.toFixed(2)} ...`;
+    this._debugContentEls.get('PLAYER').textContent = `Pos: ${pc.x.toFixed(2)}, ${pc.y.toFixed(2)}`;
 
     this._debugContentEls.get('GPU INFO').textContent = this._debugGpuInfo;
-    this._debugContentEls.get('RENDER').textContent = `Renderer: ${this.sys.game.renderer.type === 2 ? 'WebGL' : 'Canvas'} ...`;
+    this._debugContentEls.get('RENDER').textContent = `Renderer: ${this.sys.game.renderer.type === 2 ? 'WebGL' : 'Canvas'}`;
 
-    // --- Proximity ---
-    const lastPayload = this.taskDistributor.lastPayload;
     if (lastPayload) {
       const nearbyVeg = lastPayload.vegetation || [];
       const nearbyTerrain = lastPayload.terrain || [];
-      const allNearby = [...nearbyVeg, ...nearbyTerrain];
-      
-      let closest = null;
-      let minDistanceSq = Infinity;
-
-      allNearby.forEach(obj => {
-        const distSq = Phaser.Math.Distance.Squared(pc.x, pc.y, obj.x, obj.y);
-        if (distSq < minDistanceSq) {
-          minDistanceSq = distSq;
-          closest = obj;
-        }
-      });
       
       const vegCounts = {};
-      nearbyVeg.forEach(v => {
-        vegCounts[v.type] = (vegCounts[v.type] || 0) + 1;
-      });
+      nearbyVeg.forEach(v => { vegCounts[v.type] = (vegCounts[v.type] || 0) + 1; });
       
       let mostAbundant = { type: 'N/A', count: 0 };
-      let leastAbundant = { type: 'N/A', count: Infinity };
       if (Object.keys(vegCounts).length > 0) {
-          for (const type in vegCounts) {
-              if (vegCounts[type] > mostAbundant.count) {
-                  mostAbundant = { type, count: vegCounts[type] };
-              }
-              if (vegCounts[type] < leastAbundant.count) {
-                  leastAbundant = { type, count: vegCounts[type] };
-              }
-          }
+        for (const type in vegCounts) {
+          if (vegCounts[type] > mostAbundant.count) mostAbundant = { type, count: vegCounts[type] };
+        }
       }
-
-      // Create reverse maps for names
+      
       const vegNames = Object.fromEntries(Object.entries(WorldConfig.OBJECTS).map(([k, v]) => [v, k]));
       const terrainNames = Object.fromEntries(Object.entries(WorldConfig.TERRAIN).map(([k, v]) => [v, k]));
       
@@ -367,8 +374,7 @@ class GameScene extends Phaser.Scene {
       proximityText += `Nearby Veg: ${nearbyVeg.length}\n`;
       proximityText += `Nearby Terrain: ${nearbyTerrain.length}\n\n`;
       proximityText += `Closest: ${closestName} (${Math.sqrt(minDistanceSq).toFixed(1)}px)\n\n`;
-      proximityText += `Most Abundant:\n  ${vegNames[mostAbundant.type] || 'N/A'} (${mostAbundant.count}x)\n`;
-      proximityText += `Least Abundant:\n  ${vegNames[leastAbundant.type] || 'N/A'} (${leastAbundant.count}x)\n`;
+      proximityText += `Most Abundant: ${vegNames[mostAbundant.type] || 'N/A'} (${mostAbundant.count}x)\n`;
 
       this._debugContentEls.get('PROXIMITY').textContent = proximityText;
     }
