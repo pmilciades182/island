@@ -8,6 +8,9 @@ const config = {
   antialias: false,
   antialiasGL: false,
   parent: document.body,
+  input: {
+    gamepad: true
+  },
   physics: {
     default: 'arcade',
     arcade: {

@@ -3,7 +3,7 @@ export class HUD {
     this.scene = scene;
     this.callbacks = callbacks; // { onExit, onToggleCycle }
     this.sidebarWidth = 300;
-    this.uiVisible = true;
+    this.uiVisible = false;
     this.isToggling = false;
 
     this._createHUD(saveData);
@@ -14,8 +14,8 @@ export class HUD {
     const H = scene.cameras.main.height;
     const W = scene.cameras.main.width;
 
-    // Sidebar Container
-    this.hudContainer = scene.add.container(0, 0).setScrollFactor(0).setDepth(500000);
+    // Sidebar Container — starts off-screen (closed)
+    this.hudContainer = scene.add.container(-this.sidebarWidth, 0).setScrollFactor(0).setDepth(500000);
 
     // Background
     this.hudPanel = scene.add.graphics();
@@ -150,24 +150,126 @@ export class HUD {
     // Exit Button
     this._createExitButton(32, H - 80);
 
-    // Floating Toggle Button (Visible when Sidebar hidden)
-    this.toggleBtnContainer = scene.add.container(20, 20).setScrollFactor(0).setDepth(500000).setVisible(false);
+    // Floating Toggle Button (Visible when Sidebar hidden) — starts visible
+    this.toggleBtnContainer = scene.add.container(20, 20).setScrollFactor(0).setDepth(500000).setVisible(true);
 
     const tBg = scene.add.graphics();
-    tBg.fillStyle(0x18181b, 1);
-    tBg.lineStyle(2, 0x3f3f46, 1);
-    tBg.fillRoundedRect(0, 0, 48, 48, 8);
-    tBg.strokeRoundedRect(0, 0, 48, 48, 8);
+    tBg.fillStyle(0x18181b, 0.85);
+    tBg.lineStyle(1, 0x3f3f46, 1);
+    tBg.fillRoundedRect(0, 0, 56, 36, 8);
+    tBg.strokeRoundedRect(0, 0, 56, 36, 8);
     this.toggleBtnContainer.add(tBg);
 
-    const tIcon = scene.add.text(24, 24, 'MENU', {
-      fontFamily: '"Rubik", sans-serif', fontSize: '12px', color: '#ffffff', fontStyle: '700'
+    const tLabel = scene.add.text(28, 11, 'MENU', {
+      fontFamily: '"Rubik", sans-serif', fontSize: '11px', color: '#ffffff', fontStyle: '700'
     }).setOrigin(0.5);
-    this.toggleBtnContainer.add(tIcon);
+    this.toggleBtnContainer.add(tLabel);
 
-    const tZone = scene.add.zone(24, 24, 48, 48).setInteractive({ useHandCursor: true });
+    const tKey = scene.add.text(28, 26, '[M]', {
+      fontFamily: '"JetBrains Mono", monospace', fontSize: '9px', color: '#71717a'
+    }).setOrigin(0.5);
+    this.toggleBtnContainer.add(tKey);
+
+    const tZone = scene.add.zone(28, 18, 56, 36).setInteractive({ useHandCursor: true });
     tZone.on('pointerdown', () => this.toggle());
     this.toggleBtnContainer.add(tZone);
+
+    // ── Floating HP / Stamina bars (always visible) ──
+    this._createFloatingBars(scene);
+  }
+
+  _createFloatingBars(scene) {
+    const W = scene.cameras.main.width;
+    const H = scene.cameras.main.height;
+
+    this.floatingBarsContainer = scene.add.container(0, 0).setScrollFactor(0).setDepth(500001);
+
+    // ── Diablo-style bottom panel ──
+    const panelW = 320;
+    const panelH = 58;
+    const panelX = (W - panelW) / 2;
+    const panelY = H - panelH - 6;
+    const orbR = 24; // orb radius
+
+    // Dark panel background
+    const panelBg = scene.add.graphics();
+    panelBg.fillStyle(0x0e0e10, 0.85);
+    panelBg.lineStyle(1, 0x3f3f46, 0.6);
+    panelBg.fillRoundedRect(panelX, panelY, panelW, panelH, 10);
+    panelBg.strokeRoundedRect(panelX, panelY, panelW, panelH, 10);
+    this.floatingBarsContainer.add(panelBg);
+
+    // Orb positions
+    const hpOrbX = panelX + 38;
+    const stOrbX = panelX + panelW - 38;
+    const orbCY = panelY + panelH / 2;
+
+    // ── HP Orb (left) ──
+    this._hpOrbBg = scene.add.graphics();
+    this._hpOrbFill = scene.add.graphics();
+    this._hpOrbRing = scene.add.graphics();
+    this.floatingBarsContainer.add(this._hpOrbBg);
+
+    // Geometry mask for HP orb fill
+    const hpMaskShape = scene.make.graphics({ x: 0, y: 0, add: false });
+    hpMaskShape.fillCircle(hpOrbX, orbCY, orbR - 2);
+    this._hpOrbFill.setMask(hpMaskShape.createGeometryMask());
+    this.floatingBarsContainer.add(this._hpOrbFill);
+    this.floatingBarsContainer.add(this._hpOrbRing);
+
+    this._hpText = scene.add.text(hpOrbX, orbCY, '', {
+      fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#ffffff', fontStyle: '700'
+    }).setOrigin(0.5);
+    this.floatingBarsContainer.add(this._hpText);
+
+    const hpLabel = scene.add.text(hpOrbX, panelY - 6, 'HP', {
+      fontFamily: '"JetBrains Mono", monospace', fontSize: '8px', color: '#f87171', fontStyle: '700'
+    }).setOrigin(0.5);
+    this.floatingBarsContainer.add(hpLabel);
+
+    // ── Stamina Orb (right) ──
+    this._stOrbBg = scene.add.graphics();
+    this._stOrbFill = scene.add.graphics();
+    this._stOrbRing = scene.add.graphics();
+    this.floatingBarsContainer.add(this._stOrbBg);
+
+    // Geometry mask for stamina orb fill
+    const stMaskShape = scene.make.graphics({ x: 0, y: 0, add: false });
+    stMaskShape.fillCircle(stOrbX, orbCY, orbR - 2);
+    this._stOrbFill.setMask(stMaskShape.createGeometryMask());
+    this.floatingBarsContainer.add(this._stOrbFill);
+    this.floatingBarsContainer.add(this._stOrbRing);
+
+    this._stText = scene.add.text(stOrbX, orbCY, '', {
+      fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#ffffff', fontStyle: '700'
+    }).setOrigin(0.5);
+    this.floatingBarsContainer.add(this._stText);
+
+    const stLabel = scene.add.text(stOrbX, panelY - 6, 'ST', {
+      fontFamily: '"JetBrains Mono", monospace', fontSize: '8px', color: '#60a5fa', fontStyle: '700'
+    }).setOrigin(0.5);
+    this.floatingBarsContainer.add(stLabel);
+
+    // ── Center decoration ──
+    const centerX = W / 2;
+    const divL = scene.add.graphics();
+    divL.lineStyle(1, 0x3f3f46, 0.4);
+    divL.lineBetween(hpOrbX + orbR + 10, orbCY, centerX - 8, orbCY);
+    this.floatingBarsContainer.add(divL);
+
+    const divR = scene.add.graphics();
+    divR.lineStyle(1, 0x3f3f46, 0.4);
+    divR.lineBetween(centerX + 8, orbCY, stOrbX - orbR - 10, orbCY);
+    this.floatingBarsContainer.add(divR);
+
+    // Cooldown text (hidden by default)
+    this._cooldownText = scene.add.text(centerX, orbCY, '', {
+      fontFamily: '"JetBrains Mono", monospace', fontSize: '9px', color: '#fbbf24', fontStyle: '700'
+    }).setOrigin(0.5).setAlpha(0);
+    this.floatingBarsContainer.add(this._cooldownText);
+
+    // Store layout
+    this._floatBarLayout = { hpOrbX, stOrbX, orbCY, orbR };
   }
 
   _createExitButton(x, y) {
@@ -296,6 +398,78 @@ export class HUD {
       this.invText.setText('// EMPTY');
     } else {
       this.invText.setText(inventory.map(it => `[${it.quantity}] ${it.name}`).join('\n'));
+    }
+
+    // ── Floating orbs (always visible) ──
+    const fl = this._floatBarLayout;
+    if (!fl) return;
+
+    const { hpOrbX, stOrbX, orbCY, orbR } = fl;
+    const staminaCooldown = playerState.staminaCooldown || false;
+
+    // HP orb
+    const hpRatioOrb = Math.max(0, health / maxHealth);
+    this._hpOrbBg.clear();
+    this._hpOrbBg.fillStyle(0x1a0505, 1);
+    this._hpOrbBg.fillCircle(hpOrbX, orbCY, orbR - 2);
+
+    this._hpOrbFill.clear();
+    if (hpRatioOrb > 0) {
+      const fillH = (orbR * 2) * hpRatioOrb;
+      const fillY = orbCY + orbR - fillH;
+      this._hpOrbFill.fillStyle(0xdc2626, 0.85);
+      this._hpOrbFill.fillRect(hpOrbX - orbR, fillY, orbR * 2, fillH);
+      // Highlight on top of liquid
+      this._hpOrbFill.fillStyle(0xf87171, 0.3);
+      this._hpOrbFill.fillRect(hpOrbX - orbR, fillY, orbR * 2, 3);
+    }
+
+    this._hpOrbRing.clear();
+    this._hpOrbRing.lineStyle(2, 0x7f1d1d, 1);
+    this._hpOrbRing.strokeCircle(hpOrbX, orbCY, orbR);
+    // Inner shine
+    this._hpOrbRing.lineStyle(1, 0xfca5a5, 0.15);
+    this._hpOrbRing.strokeCircle(hpOrbX, orbCY, orbR - 3);
+
+    this._hpText.setText(`${Math.round(health)}`);
+
+    // Stamina orb
+    const stRatioOrb = Math.max(0, stamina / maxStamina);
+    const stCooldown = staminaCooldown;
+
+    this._stOrbBg.clear();
+    this._stOrbBg.fillStyle(stCooldown ? 0x1a1005 : 0x050e1a, 1);
+    this._stOrbBg.fillCircle(stOrbX, orbCY, orbR - 2);
+
+    this._stOrbFill.clear();
+    if (stRatioOrb > 0) {
+      const fillH = (orbR * 2) * stRatioOrb;
+      const fillY = orbCY + orbR - fillH;
+      const fillColor = stCooldown ? 0xb45309 : 0x2563eb;
+      this._stOrbFill.fillStyle(fillColor, 0.85);
+      this._stOrbFill.fillRect(stOrbX - orbR, fillY, orbR * 2, fillH);
+      const hlColor = stCooldown ? 0xfbbf24 : 0x60a5fa;
+      this._stOrbFill.fillStyle(hlColor, 0.3);
+      this._stOrbFill.fillRect(stOrbX - orbR, fillY, orbR * 2, 3);
+    }
+
+    this._stOrbRing.clear();
+    const ringColor = stCooldown ? 0x78350f : 0x1e3a5f;
+    this._stOrbRing.lineStyle(2, ringColor, 1);
+    this._stOrbRing.strokeCircle(stOrbX, orbCY, orbR);
+    const shineColor = stCooldown ? 0xfbbf24 : 0x93c5fd;
+    this._stOrbRing.lineStyle(1, shineColor, 0.15);
+    this._stOrbRing.strokeCircle(stOrbX, orbCY, orbR - 3);
+
+    this._stText.setText(`${Math.round(stamina)}`);
+    this._stText.setColor(stCooldown ? '#fbbf24' : '#ffffff');
+
+    // Cooldown indicator
+    if (stCooldown) {
+      this._cooldownText.setText('COOLDOWN');
+      this._cooldownText.setAlpha(0.6 + Math.sin(this.scene.time.now / 200) * 0.4);
+    } else {
+      this._cooldownText.setAlpha(0);
     }
   }
 }

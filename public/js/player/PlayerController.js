@@ -36,6 +36,10 @@ export class PlayerController {
     });
     this.shiftKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
+    // Gamepad
+    this.gamepad = null;
+    this._padDeadzone = 0.2;
+
     this.facing = 'down';
 
     // ── Foot particles ──
@@ -120,11 +124,21 @@ export class PlayerController {
     return 0;                  // clear
   }
 
-  update(delta, stamina, maxStamina) {
+  update(delta, stamina, maxStamina, staminaCooldown = false) {
     const body = this.playerContainer.body;
     body.setVelocity(0, 0);
 
-    this.sprinting = this.shiftKey.isDown && stamina > 0;
+    // Grab first connected gamepad
+    if (!this.gamepad || !this.gamepad.connected) {
+      this.gamepad = this.scene.input.gamepad?.pad1 || null;
+    }
+
+    // Gamepad sprint: left trigger (LT) or A button (index 0)
+    const padSprint = this.gamepad
+      ? (this.gamepad.buttons[6]?.value > 0.3 || this.gamepad.A)
+      : false;
+
+    this.sprinting = (this.shiftKey.isDown || padSprint) && stamina > 0 && !staminaCooldown;
     let currentSpeed = this.sprinting ? this.speed * 1.8 : this.speed;
 
     // Terrain speed modifier at current position
@@ -148,9 +162,22 @@ export class PlayerController {
     if (up) vy = -currentSpeed;
     if (down) vy = currentSpeed;
 
+    // Gamepad left stick
+    if (this.gamepad) {
+      const lx = this.gamepad.leftStick.x;
+      const ly = this.gamepad.leftStick.y;
+      if (Math.abs(lx) > this._padDeadzone || Math.abs(ly) > this._padDeadzone) {
+        vx = lx * currentSpeed;
+        vy = ly * currentSpeed;
+      }
+    }
+
     if (vx !== 0 && vy !== 0) {
-      vx *= Math.SQRT1_2;
-      vy *= Math.SQRT1_2;
+      const mag = Math.sqrt(vx * vx + vy * vy);
+      if (mag > currentSpeed) {
+        vx = (vx / mag) * currentSpeed;
+        vy = (vy / mag) * currentSpeed;
+      }
     }
 
     body.setVelocity(vx, vy);

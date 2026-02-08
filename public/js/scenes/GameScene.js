@@ -163,6 +163,7 @@ class GameScene extends Phaser.Scene {
     this.maxHealth = p.maxHealth;
     this.stamina = p.stamina;
     this.maxStamina = p.maxStamina;
+    this.staminaCooldown = false;
     this.attributes = { ...p.attributes };
     this.inventory = [...p.inventory];
     this.player = this.playerController.playerContainer;
@@ -188,16 +189,10 @@ class GameScene extends Phaser.Scene {
     this.interactPopup = new InteractPopup(this);
 
     // E key for interaction
-    this.input.keyboard.on('keydown-E', () => {
-      const target = this.interactIndicator.currentObject;
-      if (this.interactPopup.isOpen) {
-        this.soundManager.playClick();
-        this.interactPopup.close();
-      } else if (target) {
-        this.soundManager.playInteract();
-        this.interactPopup.open(target);
-      }
-    });
+    this.input.keyboard.on('keydown-E', () => this._handleInteract());
+
+    // Gamepad X button for interaction (debounce flag)
+    this._padInteractHeld = false;
 
 
     // ... (auto-save timer remains the same)
@@ -286,11 +281,34 @@ class GameScene extends Phaser.Scene {
     this.ready = true;
   }
 
+  _handleInteract() {
+    const target = this.interactIndicator.currentObject;
+    if (this.interactPopup.isOpen) {
+      this.soundManager.playClick();
+      this.interactPopup.close();
+    } else if (target) {
+      this.soundManager.playInteract();
+      this.interactPopup.open(target);
+    }
+  }
+
   update(time, delta) {
     if (!this.ready) return;
 
+    // Gamepad X button → interact (with debounce)
+    const pad = this.playerController.gamepad;
+    if (pad) {
+      const xPressed = pad.X; // Phaser maps Xbox X to .X
+      if (xPressed && !this._padInteractHeld) {
+        this._padInteractHeld = true;
+        this._handleInteract();
+      } else if (!xPressed) {
+        this._padInteractHeld = false;
+      }
+    }
+
     this.proximityManager.update();
-    const moveState = this.playerController.update(delta, this.stamina, this.maxStamina);
+    const moveState = this.playerController.update(delta, this.stamina, this.maxStamina, this.staminaCooldown);
     const cam = this.cameras.main;
 
     if (moveState.moving) {
@@ -324,9 +342,13 @@ class GameScene extends Phaser.Scene {
     this.updateDebugPanel(time, delta, moveState, lastPayload, closestInteractable, closestDistSq);
 
     if (moveState.sprinting) {
-      this.stamina = Math.max(0, this.stamina - 20 * (delta / 1000));
+      this.stamina = Math.max(0, this.stamina - 40 * (delta / 1000));
+      if (this.stamina <= 0) this.staminaCooldown = true;
     } else {
       this.stamina = Math.min(this.maxStamina, this.stamina + 10 * (delta / 1000));
+      if (this.staminaCooldown && this.stamina >= this.maxStamina * 0.3) {
+        this.staminaCooldown = false;
+      }
     }
     if (moveState.moving) {
       const rate = moveState.sprinting ? 16 : 10;
@@ -342,6 +364,7 @@ class GameScene extends Phaser.Scene {
       maxHealth: this.maxHealth,
       stamina: this.stamina,
       maxStamina: this.maxStamina,
+      staminaCooldown: this.staminaCooldown,
       attributes: this.attributes,
       inventory: this.inventory
     });
