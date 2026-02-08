@@ -29,10 +29,37 @@
     canvas {
       border-radius: 12px;
     }
+
+    #debug-panel {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 280px;
+      height: 100vh;
+      background: #111;
+      color: #00ff88;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      padding: 12px;
+      overflow-y: auto;
+      z-index: 99999;
+      border-right: 1px solid #333;
+    }
+    #debug-panel .section {
+      color: #888;
+      margin-top: 8px;
+      border-bottom: 1px solid #222;
+      padding-bottom: 2px;
+      margin-bottom: 2px;
+    }
+    #debug-panel .warn { color: #ffaa00; }
+    #debug-panel .err { color: #ff4444; }
   </style>
 </head>
 
 <body>
+  <div id="debug-panel">DEBUG: Waiting for game...</div>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
   <script src="js/lib/noise.js"></script>
   <script type="module" src="js/world/WorldConfig.js"></script>

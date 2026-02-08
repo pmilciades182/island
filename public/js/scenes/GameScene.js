@@ -123,7 +123,7 @@ class GameScene extends Phaser.Scene {
     // Step 3: Render texture (50% - 90%)
     setStep('Rendering texture...', 0.50);
     const renderer = new TerrainRenderer(this);
-    await renderer.render(this.generator.data, 8000, 2.5, (prog) => {
+    this.terrainImage = await renderer.render(this.generator.data, 8000, 2.5, (prog) => {
       setStep('Rendering texture...', 0.50 + prog * 0.40);
     });
 
@@ -149,7 +149,7 @@ class GameScene extends Phaser.Scene {
 
     // Camera
     this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
-    this.cameras.main.startFollow(this.playerController.playerContainer, true, 0.08, 0.08);
+    this.cameras.main.startFollow(this.playerController.playerContainer, false, 0.15, 0.15);
     this.cameras.main.fadeIn(500, 0, 0, 0);
 
     this.dayNight = new DayNightCycle(this);
@@ -188,6 +188,15 @@ class GameScene extends Phaser.Scene {
       delay: 5000, callback: () => this.autoSave(), loop: true
     });
 
+    // ── Debug Panel (DOM) ──
+    this._debugPrevCamX = 0;
+    this._debugPrevCamY = 0;
+    this._debugPrevPlayerX = 0;
+    this._debugPrevPlayerY = 0;
+    this._debugFrameTimes = [];
+    this._debugEl = document.getElementById('debug-panel');
+    this._debugJitterLog = []; // track camera position jumps
+
     this.ready = true;
   }
 
@@ -196,6 +205,139 @@ class GameScene extends Phaser.Scene {
 
     // Player movement
     const moveState = this.playerController.update(delta, this.stamina, this.maxStamina);
+
+    // ── Debug update (DOM) ──
+    if (this._debugEl) {
+      const cam = this.cameras.main;
+      const pc = this.playerController.playerContainer;
+      const body = pc.body;
+
+      // FPS tracking
+      this._debugFrameTimes.push(delta);
+      if (this._debugFrameTimes.length > 60) this._debugFrameTimes.shift();
+      const avgDelta = this._debugFrameTimes.reduce((a, b) => a + b, 0) / this._debugFrameTimes.length;
+      const fps = Math.round(1000 / avgDelta);
+      const minFps = Math.round(1000 / Math.max(...this._debugFrameTimes));
+      const maxFps = Math.round(1000 / Math.min(...this._debugFrameTimes));
+
+      // Camera delta per frame
+      const camDx = cam.scrollX - this._debugPrevCamX;
+      const camDy = cam.scrollY - this._debugPrevCamY;
+
+      // Jitter detection: direction reversal in consecutive frames
+      const jitterX = (this._debugLastCamDx !== undefined && camDx !== 0 && this._debugLastCamDx !== 0 &&
+        Math.sign(camDx) !== Math.sign(this._debugLastCamDx));
+      const jitterY = (this._debugLastCamDy !== undefined && camDy !== 0 && this._debugLastCamDy !== 0 &&
+        Math.sign(camDy) !== Math.sign(this._debugLastCamDy));
+
+      if (jitterX || jitterY) {
+        this._debugJitterLog.push({
+          t: time.toFixed(0),
+          dx: camDx.toFixed(4),
+          dy: camDy.toFixed(4),
+          pdx: this._debugLastCamDx.toFixed(4),
+          pdy: this._debugLastCamDy.toFixed(4)
+        });
+        if (this._debugJitterLog.length > 8) this._debugJitterLog.shift();
+      }
+
+      this._debugLastCamDx = camDx;
+      this._debugLastCamDy = camDy;
+      this._debugPrevCamX = cam.scrollX;
+      this._debugPrevCamY = cam.scrollY;
+
+      // Player delta per frame
+      const pDx = pc.x - this._debugPrevPlayerX;
+      const pDy = pc.y - this._debugPrevPlayerY;
+      this._debugPrevPlayerX = pc.x;
+      this._debugPrevPlayerY = pc.y;
+
+      // Terrain image tracking
+      const ti = this.terrainImage;
+      let terrainHtml = '<span class="err">No terrain ref</span>';
+      let terrainShake = '';
+      if (ti) {
+        const tiScreenX = ti.x - cam.scrollX;
+        const tiScreenY = ti.y - cam.scrollY;
+
+        // Track terrain screen position changes
+        if (this._debugPrevTiScreenX === undefined) {
+          this._debugPrevTiScreenX = tiScreenX;
+          this._debugPrevTiScreenY = tiScreenY;
+        }
+        const tiDx = tiScreenX - this._debugPrevTiScreenX;
+        const tiDy = tiScreenY - this._debugPrevTiScreenY;
+        this._debugPrevTiScreenX = tiScreenX;
+        this._debugPrevTiScreenY = tiScreenY;
+
+        // Detect terrain-specific shake (screen pos should be constant if camera tracks properly)
+        const tiMoving = Math.abs(tiDx) > 0.001 || Math.abs(tiDy) > 0.001;
+        if (tiMoving && (body.velocity.x !== 0 || body.velocity.y !== 0)) {
+          if (!this._debugTerrainShakeLog) this._debugTerrainShakeLog = [];
+          this._debugTerrainShakeLog.push(`Δscr(${tiDx.toFixed(4)},${tiDy.toFixed(4)})`);
+          if (this._debugTerrainShakeLog.length > 6) this._debugTerrainShakeLog.shift();
+        }
+
+        const texSrc = ti.texture.source[0];
+        const glTex = texSrc.glTexture;
+        const filterName = glTex
+          ? (texSrc.scaleMode === 0 ? 'LINEAR' : 'NEAREST')
+          : 'Canvas2D';
+
+        terrainHtml = `
+          World: ${ti.x.toFixed(2)}, ${ti.y.toFixed(2)}<br>
+          Screen: ${tiScreenX.toFixed(4)}, ${tiScreenY.toFixed(4)}<br>
+          Δ screen/f: ${tiDx.toFixed(4)}, ${tiDy.toFixed(4)}<br>
+          Scale: ${ti.scaleX}x${ti.scaleY}<br>
+          Origin: ${ti.originX}, ${ti.originY}<br>
+          Depth: ${ti.depth}<br>
+          ScrollFactor: ${ti.scrollFactorX}, ${ti.scrollFactorY}<br>
+          Filter: ${filterName}<br>
+          TexSize: ${texSrc.width}x${texSrc.height}<br>
+          Visible: ${ti.visible} Alpha: ${ti.alpha}`;
+
+        terrainShake = (this._debugTerrainShakeLog && this._debugTerrainShakeLog.length > 0)
+          ? this._debugTerrainShakeLog.map(s => `<span class="warn">${s}</span>`).join('<br>')
+          : '<span style="color:#00ff88">Stable</span>';
+      }
+
+      const jitterHtml = this._debugJitterLog.length > 0
+        ? this._debugJitterLog.map(j =>
+          `<span class="warn">t=${j.t} Δ(${j.dx},${j.dy}) prev(${j.pdx},${j.pdy})</span>`
+        ).join('<br>')
+        : '<span style="color:#00ff88">None detected</span>';
+
+      this._debugEl.innerHTML = `
+        <div class="section">PERFORMANCE</div>
+        FPS: ${fps} (min:${minFps} max:${maxFps})<br>
+        Delta: ${delta.toFixed(2)}ms<br>
+        <div class="section">CAMERA</div>
+        Scroll: ${cam.scrollX.toFixed(3)}, ${cam.scrollY.toFixed(3)}<br>
+        Frac: ${(cam.scrollX % 1).toFixed(4)}, ${(cam.scrollY % 1).toFixed(4)}<br>
+        Δ/frame: ${camDx.toFixed(4)}, ${camDy.toFixed(4)}<br>
+        roundPixels: ${cam.roundPixels}<br>
+        zoom: ${cam.zoom}<br>
+        <div class="section">PLAYER</div>
+        Pos: ${pc.x.toFixed(3)}, ${pc.y.toFixed(3)}<br>
+        Frac: ${(pc.x % 1).toFixed(4)}, ${(pc.y % 1).toFixed(4)}<br>
+        Δ/frame: ${pDx.toFixed(4)}, ${pDy.toFixed(4)}<br>
+        Vel: ${body.velocity.x.toFixed(1)}, ${body.velocity.y.toFixed(1)}<br>
+        Moving: ${moveState.moving} Sprint: ${moveState.sprinting}<br>
+        Facing: ${moveState.facing}<br>
+        <div class="section">TERRAIN IMAGE</div>
+        ${terrainHtml}<br>
+        <div class="section">TERRAIN SHAKE</div>
+        ${terrainShake}<br>
+        <div class="section">RENDER</div>
+        Renderer: ${this.sys.game.renderer.type === 2 ? 'WebGL' : 'Canvas'}<br>
+        pixelArt: ${this.sys.game.config.pixelArt}<br>
+        roundPx(cfg): ${this.sys.game.config.roundPixels}<br>
+        Veg chunks: ${this.vegetation.activeTreeChunks.size}<br>
+        Trail marks: ${this.playerController.trailMarks.length}<br>
+        <div class="section">JITTER LOG</div>
+        ${jitterHtml}
+      `;
+    }
 
     // Sprint stamina drain/regen
     if (moveState.sprinting) {

@@ -29,9 +29,9 @@ export class TerrainRenderer {
     async render(gridData, fullSize, tileSize, onProgress) {
         if (!this.noise) throw new Error("Noise library not available");
 
-        // Render at half resolution for performance
-        const size = fullSize >> 1; // 4000
-        const scale = 2; // sample every 2nd pixel from grid
+        // Render at full resolution to avoid texture swimming (scale 2.5x instead of 5x)
+        const size = fullSize; // 8000
+        const scale = 1; // 1:1 with grid
 
         const canvas = document.createElement('canvas');
         canvas.width = size;
@@ -142,14 +142,13 @@ export class TerrainRenderer {
 
         ctx.putImageData(imgData, 0, 0);
 
-        // Smoothing pass: use a separate canvas to avoid self-draw corruption
+        // Smoothing pass: soften texel boundaries to reduce swimming
         const smoothCanvas = document.createElement('canvas');
         smoothCanvas.width = size;
         smoothCanvas.height = size;
         const sCtx = smoothCanvas.getContext('2d');
         sCtx.imageSmoothingEnabled = true;
         sCtx.imageSmoothingQuality = 'high';
-        // Downscale to temp, then upscale back with smoothing
         const tmpCanvas = document.createElement('canvas');
         const halfW = size >> 1;
         const halfH = size >> 1;
@@ -159,9 +158,7 @@ export class TerrainRenderer {
         tCtx.imageSmoothingEnabled = true;
         tCtx.imageSmoothingQuality = 'high';
         tCtx.drawImage(canvas, 0, 0, halfW, halfH);
-        // Upscale blurred version
         sCtx.drawImage(tmpCanvas, 0, 0, size, size);
-        // Blend sharp original on top (60% opacity)
         sCtx.globalAlpha = 0.6;
         sCtx.drawImage(canvas, 0, 0);
         sCtx.globalAlpha = 1.0;
@@ -170,9 +167,8 @@ export class TerrainRenderer {
             this.scene.textures.addCanvas('worldmap', smoothCanvas);
             const img = this.scene.add.image(0, 0, 'worldmap');
             img.setOrigin(0, 0);
-            img.setScale(tileSize * scale); // 2.5 * 2 = 5
+            img.setScale(tileSize * scale); // 2.5 * 1 = 2.5
 
-            // Force LINEAR filtering even with pixelArt:true
             img.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
 
             resolve(img);
