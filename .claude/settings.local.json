@@ -23,7 +23,9 @@
       "WebFetch(domain:rexrainbow.github.io)",
       "WebFetch(domain:phaser.io)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(nautilus:*)",
+      "Bash(gnome-shell:*)"
     ]
   }
 }
