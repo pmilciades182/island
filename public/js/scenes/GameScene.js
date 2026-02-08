@@ -122,6 +122,8 @@ class GameScene extends Phaser.Scene {
     await this.generator.generate((prog) => {
       setStep('Generating terrain...', 0.05 + prog * 0.45);
     });
+    console.log('[GameScene] Generator data length:', this.generator.data.length, 'Vegetation data length:', this.generator.vegetation.length);
+
 
     // Step 3: Render texture (50% - 90%)
     setStep('Rendering texture...', 0.50);
@@ -178,17 +180,31 @@ class GameScene extends Phaser.Scene {
       else if (event.key === '-' || event.key === '_') this.dayNight.advance(-5000);
     });
 
-    // Interaction Indicator
-    this.interactIndicator = this.add.container(0, 0).setDepth(400000).setVisible(false);
+    // Interaction Indicator (Firefly-like)
+    this.interactIndicator = this.add.container(0, 0).setDepth(400000).setVisible(false).setAlpha(0); // Start invisible and transparent
+    this._currentInteractiveObject = null; // Track what the indicator is currently on
+    const indicatorColor = 0xF1C40F; // Sunny Yellow from FLOWER_COLORS
+
     const indBg = this.add.graphics();
-    indBg.fillStyle(0x0a0a0a, 0.8);
-    indBg.fillCircle(0, 0, 16);
-    indBg.lineStyle(1, 0xeeeeee, 0.9);
-    indBg.strokeCircle(0, 0, 16);
-    const indText = this.add.text(0, 0, 'E', {
-      fontFamily: '"Rubik", sans-serif', fontSize: '16px', color: '#ffffff', fontStyle: '600'
-    }).setOrigin(0.5);
-    this.interactIndicator.add([indBg, indText]);
+    indBg.fillStyle(indicatorColor, 0.3); // Translucent background glow
+    indBg.fillCircle(0, 0, 10); // Slightly larger radius than core
+    
+    const indCore = this.add.graphics();
+    indCore.fillStyle(indicatorColor, 0.9); // Brighter core
+    indCore.fillCircle(0, 0, 5); // Small central light
+    
+    this.interactIndicator.add([indBg, indCore]);
+
+    // Add pulsing tween to the indicator (only scale, alpha will be controlled by fade tweens)
+    this.tweens.add({
+        targets: this.interactIndicator,
+        scale: 1.2, // Slightly larger pulse
+        // alpha: 0.7, // Alpha controlled by fade tweens now
+        duration: 800,
+        ease: 'Sine.InOut',
+        yoyo: true,
+        repeat: -1 // Loop indefinitely
+    });
 
 
     // ... (auto-save timer remains the same)
@@ -297,11 +313,53 @@ class GameScene extends Phaser.Scene {
       });
     }
 
+    // --- Firefly Indicator Logic ---
     if (closestInteractable) {
-      this.interactIndicator.setVisible(true);
-      this.interactIndicator.setPosition(closestInteractable.x, closestInteractable.y - 48);
+      const targetX = closestInteractable.x;
+      const targetY = closestInteractable.y - 48; // Offset above object
+
+      if (!this._currentInteractiveObject || this._currentInteractiveObject.gridIndex !== closestInteractable.gridIndex) {
+        // New closest object, or indicator was hidden
+        this.tweens.killTweensOf(this.interactIndicator, null, ['alpha', 'x', 'y']); // Kill specific active tweens
+        
+        this.interactIndicator.setVisible(true);
+        this.tweens.add({
+          targets: this.interactIndicator,
+          x: targetX,
+          y: targetY,
+          alpha: 1, // Fade in
+          duration: 200, // Quick move/fade in
+          ease: 'Power1',
+          onComplete: () => {
+            this._currentInteractiveObject = closestInteractable;
+          }
+        });
+      } else {
+        // Same object, just ensure it's visible and fully opaque, and update position
+        this.interactIndicator.setVisible(true);
+        // Ensure full alpha if it was being faded out
+        if (this.interactIndicator.alpha < 1) {
+            this.tweens.killTweensOf(this.interactIndicator, null, ['alpha']); // Kill any active alpha tween
+            this.interactIndicator.setAlpha(1); // Snap to full alpha immediately
+        }
+        this.interactIndicator.setPosition(targetX, targetY); // Snap to new position if player moved relative to object
+      }
     } else {
-      this.interactIndicator.setVisible(false);
+      // No interactable object found
+      if (this._currentInteractiveObject) { // Only fade out if it was visible
+        this.tweens.killTweensOf(this.interactIndicator, null, ['alpha', 'x', 'y']); // Kill specific active tweens
+        this.tweens.add({
+          targets: this.interactIndicator,
+          alpha: 0, // Fade out
+          duration: 300,
+          ease: 'Power1',
+          onComplete: () => {
+            this.interactIndicator.setVisible(false);
+            this._currentInteractiveObject = null;
+            this.interactIndicator.setPosition(0, 0); // Reset position off-screen
+          }
+        });
+      }
     }
     
     this.updateDebugPanel(time, delta, moveState, lastPayload, closestInteractable, closestDistSq);

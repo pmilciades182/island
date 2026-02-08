@@ -8,6 +8,7 @@ export class TaskDistributor {
 
   dispatch(task) {
     this.lastPayload = task.payload;
+    console.log('[TaskDistributor] Dispatching task:', task);
 
     if (task.type === 'PROXIMITY_UPDATE') {
       const newActiveSet = new Set();

@@ -9,6 +9,7 @@ export class IslandGenerator {
         this.gridSize = Math.floor(worldSize / tileSize); // 8000
         this.data = new Uint8Array(this.gridSize * this.gridSize);
         this.vegetation = new Uint8Array(this.gridSize * this.gridSize);
+        console.log('[IslandGenerator] Initialized. Terrain data length:', this.data.length, 'Vegetation data length:', this.vegetation.length);
     }
 
     async generate(onProgress) {
@@ -137,18 +138,22 @@ export class IslandGenerator {
     }
 
     getTerrainInRadius(worldX, worldY, radius) {
-        if (!this.data) return [];
+        if (!this.data) {
+            console.log('[IslandGenerator] getTerrainInRadius: data is null.');
+            return [];
+        }
 
         const nearby = [];
         const radiusSq = radius * radius;
         const TILE_SIZE = this.tileSize;
         const GRID_SIZE = this.gridSize;
 
-        // Bounding box in grid coordinates
         const minGx = Math.floor((worldX - radius) / TILE_SIZE);
         const maxGx = Math.ceil((worldX + radius) / TILE_SIZE);
         const minGy = Math.floor((worldY - radius) / TILE_SIZE);
         const maxGy = Math.ceil((worldY + radius) / TILE_SIZE);
+
+        // console.log(`[IslandGenerator] getTerrainInRadius: Searching bbox [${minGx},${minGy}] to [${maxGx},${maxGy}] for player (${worldX.toFixed(0)},${worldY.toFixed(0)})`);
 
         for (let gy = Math.max(0, minGy); gy < Math.min(GRID_SIZE, maxGy); gy++) {
             for (let gx = Math.max(0, minGx); gx < Math.min(GRID_SIZE, maxGx); gx++) {
@@ -165,9 +170,11 @@ export class IslandGenerator {
                         type: this.data[index],
                         gridIndex: index,
                     });
+                    // console.log(`[IslandGenerator] Found and added tileType ${this.data[index]} at (${tileX.toFixed(0)},${tileY.toFixed(0)})`);
                 }
             }
         }
+        // console.log('[IslandGenerator] getTerrainInRadius: Found', nearby.length, 'tiles.');
         return nearby;
     }
 }

@@ -7,6 +7,7 @@ export class ProximityManager {
     this.taskDistributor = taskDistributor;
     this.radius = config.radius || 100; // Default radius
     this.debugGraphics = scene.add.graphics().setDepth(1000);
+    console.log('[ProximityManager] Initialized with radius:', this.radius);
   }
 
   update() {
@@ -19,6 +20,11 @@ export class ProximityManager {
     // Find nearby terrain info
     const nearbyTerrain = this.islandGenerator.getTerrainInRadius(playerX, playerY, this.radius);
 
+    // DEBUG: Log detected objects and terrain
+    // console.log(`[ProximityManager] Player at (${playerX.toFixed(0)}, ${playerY.toFixed(0)})`);
+    // console.log(`[ProximityManager] Nearby Vegetation: ${nearbyVegetation.length}`);
+    // console.log(`[ProximityManager] Nearby Terrain: ${nearbyTerrain.length}`);
+
     // Dispatch tasks
     if (nearbyVegetation.length > 0 || nearbyTerrain.length > 0) {
       this.taskDistributor.dispatch({
@@ -28,6 +34,15 @@ export class ProximityManager {
           terrain: nearbyTerrain,
         }
       });
+    } else {
+        // DEBUG: If nothing is detected, dispatch an empty payload to clear debug info
+        this.taskDistributor.dispatch({
+            type: 'PROXIMITY_UPDATE',
+            payload: {
+                vegetation: [],
+                terrain: [],
+            }
+        });
     }
 
     // Draw debug circle

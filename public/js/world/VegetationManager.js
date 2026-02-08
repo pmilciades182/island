@@ -6,6 +6,7 @@ export class VegetationManager {
     this.vegetationData = vegetationData;
     this.CHUNK_SIZE = 500;
     this.spriteMap = new Map();
+    console.log('[VegetationManager] Initialized. vegetationData length:', this.vegetationData.length);
 
     // Tree Management Group
     this.treesGroup = scene.add.group();
@@ -438,7 +439,10 @@ export class VegetationManager {
   }
 
   getVegetationInRadius(playerX, playerY, radius) {
-    if (!this.vegetationData) return [];
+    if (!this.vegetationData) {
+      console.log('[VegetationManager] getVegetationInRadius: vegetationData is null.');
+      return [];
+    }
 
     const nearby = [];
     const radiusSq = radius * radius;
@@ -449,6 +453,8 @@ export class VegetationManager {
     const maxGx = Math.ceil((playerX + radius) / CELL_SIZE);
     const minGy = Math.floor((playerY - radius) / CELL_SIZE);
     const maxGy = Math.ceil((playerY + radius) / CELL_SIZE);
+
+    // console.log(`[VegetationManager] getVegetationInRadius: Searching bbox [${minGx},${minGy}] to [${maxGx},${maxGy}] for player (${playerX.toFixed(0)},${playerY.toFixed(0)})`);
 
     for (let gy = Math.max(0, minGy); gy < Math.min(GRID_WIDTH, maxGy); gy++) {
       for (let gx = Math.max(0, minGx); gx < Math.min(GRID_WIDTH, maxGx); gx++) {
@@ -469,10 +475,12 @@ export class VegetationManager {
               gridIndex: index,
               sprite: this.spriteMap.get(index) || null,
             });
+            // console.log(`[VegetationManager] Found and added objType ${objType} at (${objX.toFixed(0)},${objY.toFixed(0)})`);
           }
         }
       }
     }
+    // console.log('[VegetationManager] getVegetationInRadius: Found', nearby.length, 'objects.');
     return nearby;
   }
 }
