@@ -29,6 +29,13 @@ export const CONFIG = {
   BUSH_DIRT: BushDirt.CONFIG
 };
 
+export const COLORS = {
+  FLOWER: Flower.COLORS,
+  BUSH_SAND: BushSand.COLORS,
+  BUSH_GRASS: BushGrass.COLORS,
+  BUSH_DIRT: BushDirt.COLORS
+};
+
 export { default as TreeDef } from './tree/definition.js';
 export { default as RockSmallDef } from './rock_small/definition.js';
 export { default as RockMediumDef } from './rock_medium/definition.js';

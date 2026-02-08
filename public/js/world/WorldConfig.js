@@ -95,33 +95,7 @@ export const WorldConfig = {
         ALLOWED_TERRAINS_BUSH_DIRT: Objects.CONFIG.BUSH_DIRT.allowedTerrains
     },
 
-    // Bush color palettes per terrain (harmonized with terrain palettes)
-    BUSH_COLORS: {
-        // Sand bushes: dry, muted sage greens and tan
-        SAND: [0xA8B06A, 0xB5A86B, 0x8E9960, 0xC2B87A],
-        // Grass bushes: vibrant leafy greens
-        GRASS: [0x4A8C3F, 0x5DA84E, 0x3B7A34, 0x6BB85A],
-        // Dirt bushes: deep olive and brown-greens
-        DIRT: [0x6B7A3A, 0x5C6832, 0x7A8844, 0x4E5B2B]
-    },
-
-    // Harmonized Flower Colors (AAA-style, cohesive with environment)
-    FLOWER_COLORS: [
-        0xE74C3C, // Warm Red
-        0xF39C12, // Golden Orange
-        0xF1C40F, // Sunny Yellow
-        0xE8DAEF, // Soft Lavender
-        0xAF7AC5, // Purple
-        0x5DADE2, // Sky Blue
-        0x48C9B0, // Turquoise
-        0x52BE80, // Emerald Green
-        0xF8B88B, // Peach
-        0xEC7063, // Coral
-        0xF7DC6F, // Light Yellow
-        0xBB8FCE, // Light Purple
-        0x85C1E2, // Powder Blue
-        0x76D7C4, // Mint
-        0xF5B7B1, // Pink
-        0xFAD7A0  // Cream
-    ]
+    // Object color palettes moved to `public/js/objects/*` modules
+    // e.g. Objects.CONFIG and Objects.COLORS
+    
 };
