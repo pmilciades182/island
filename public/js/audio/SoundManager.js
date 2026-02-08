@@ -13,13 +13,13 @@ export class SoundManager {
 
     // Footstep timing
     this._lastStepTime = 0;
-    this._stepInterval = 280; // ms between steps
-    this._stepIntervalSprint = 180;
+    this._stepInterval = 400; // ms between steps
+    this._stepIntervalSprint = 200;
     this._stepFoot = 0; // Alternates between 0 and 1
 
     // Variation ranges for natural sound
-    this._volumeVariation = 0.25;  // ±25% volume variation
-    this._pitchVariation = 0.12;   // ±12% pitch variation
+    this._volumeVariation = 0.30;  // ±25% volume variation
+    this._pitchVariation = 0.20;   // ±12% pitch variation
   }
 
   /**

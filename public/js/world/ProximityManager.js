@@ -1,4 +1,5 @@
 export class ProximityManager {
+
   constructor(scene, player, vegetationManager, islandGenerator, taskDistributor, config) {
     this.scene = scene;
     this.player = player;
@@ -43,14 +44,14 @@ export class ProximityManager {
         }
       });
     } else {
-        // DEBUG: If nothing is detected, dispatch an empty payload to clear debug info
-        this.taskDistributor.dispatch({
-            type: 'PROXIMITY_UPDATE',
-            payload: {
-                vegetation: [],
-                terrain: [],
-            }
-        });
+      // DEBUG: If nothing is detected, dispatch an empty payload to clear debug info
+      this.taskDistributor.dispatch({
+        type: 'PROXIMITY_UPDATE',
+        payload: {
+          vegetation: [],
+          terrain: [],
+        }
+      });
     }
 
     // Draw debug circle
