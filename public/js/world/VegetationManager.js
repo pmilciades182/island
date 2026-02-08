@@ -5,6 +5,7 @@ export class VegetationManager {
     this.scene = scene;
     this.vegetationData = vegetationData;
     this.CHUNK_SIZE = 500;
+    this.spriteMap = new Map();
 
     // Tree Management Group
     this.treesGroup = scene.add.group();
@@ -18,7 +19,8 @@ export class VegetationManager {
     this.currentTerrainType = -1;
   }
 
-  _createTextures() {
+  // ... _createTextures and _createParticles methods remain the same
+    _createTextures() {
     const scene = this.scene;
 
     // Tree Texture (64x64)
@@ -325,7 +327,6 @@ export class VegetationManager {
     const chunkX = Math.floor(playerX / this.CHUNK_SIZE);
     const chunkY = Math.floor(playerY / this.CHUNK_SIZE);
 
-    // Visible chunks (3x3 grid around player)
     const visibleChunks = new Set();
     for (let dy = -1; dy <= 1; dy++) {
       for (let dx = -1; dx <= 1; dx++) {
@@ -333,11 +334,11 @@ export class VegetationManager {
       }
     }
 
-    // Remove distant chunks
     this.activeTreeChunks.forEach(key => {
       if (!visibleChunks.has(key)) {
         this.treesGroup.children.each(child => {
           if (child.chunkKey === key) {
+            this.spriteMap.delete(child.gridIndex);
             child.destroy();
           }
         });
@@ -345,7 +346,6 @@ export class VegetationManager {
       }
     });
 
-    // Add new chunks
     visibleChunks.forEach(key => {
       if (!this.activeTreeChunks.has(key)) {
         this._createTreesInChunk(key);
@@ -353,7 +353,6 @@ export class VegetationManager {
       }
     });
 
-    // Update particles based on terrain under player
     const playerGridX = Math.floor(playerX / WorldConfig.TILE_SIZE);
     const playerGridY = Math.floor(playerY / WorldConfig.TILE_SIZE);
 
@@ -373,19 +372,16 @@ export class VegetationManager {
   _createTreesInChunk(chunkKey) {
     const [chunkX, chunkY] = chunkKey.split(',').map(Number);
 
-    // Límites del chunk en coordenadas del mundo
     const worldMinX = chunkX * this.CHUNK_SIZE;
     const worldMinY = chunkY * this.CHUNK_SIZE;
     const worldMaxX = worldMinX + this.CHUNK_SIZE;
     const worldMaxY = worldMinY + this.CHUNK_SIZE;
 
-    // Convertir a coordenadas de la grilla de vegetación (resolución 2.5 px por celda)
     const gridMinX = Math.floor(worldMinX / 2.5);
     const gridMinY = Math.floor(worldMinY / 2.5);
     const gridMaxX = Math.ceil(worldMaxX / 2.5);
     const gridMaxY = Math.ceil(worldMaxY / 2.5);
 
-    // Salir temprano si el chunk está completamente fuera del mapa
     if (gridMaxX <= 0 || gridMaxY <= 0 || gridMinX >= 8000 || gridMinY >= 8000) {
       return;
     }
@@ -399,81 +395,84 @@ export class VegetationManager {
         const objType = this.vegetationData[index];
 
         if (objType <= 0) continue;
-
-        // Tipo de terreno para decidir variante (ej: árbol oscuro en zonas oscuras)
+        
         const terrain = terrainData ? terrainData[index] : -1;
         const isDarkGrass = terrain === WorldConfig.TERRAIN.GRASS_DARK;
 
-        // Configuración por defecto
         let textureKey = isDarkGrass ? 'tree_dark' : 'tree';
         let originY = 0.9;
-        let scale = 1;           // ← puedes usar esto después si quieres variedad
-        let randomOffset = 2;    // ← radio de jitter
-        let ySort = true;        // Y-sorting (can overlap player)
+        let ySort = true;
 
-        // Sobrescribir según tipo de objeto
         switch (objType) {
-          case WorldConfig.OBJECTS.ROCK_SMALL:
-            textureKey = 'rock_small';
-            originY = 0.7;
-            ySort = false;
-            break;
-
-          case WorldConfig.OBJECTS.ROCK_MEDIUM:
-            textureKey = 'rock_medium';
-            originY = 0.8;
-            ySort = false;
-            break;
-
-          case WorldConfig.OBJECTS.ROCK_LARGE:
-            textureKey = 'rock_large';
-            originY = 0.85;
-            break;
-
-          case WorldConfig.OBJECTS.FLOWER:
-            const color = Math.floor(Math.random() * 16);
-            textureKey = `flower_${color}`;
-            originY = 0.8;
-            ySort = false;
-            break;
-
-          case WorldConfig.OBJECTS.BUSH_SAND:
-            textureKey = `bush_sand_${Math.floor(Math.random() * 4)}`;
-            originY = 0.85;
-            ySort = false;
-            break;
-
-          case WorldConfig.OBJECTS.BUSH_GRASS:
-            textureKey = `bush_grass_${Math.floor(Math.random() * 4)}`;
-            originY = 0.85;
-            ySort = false;
-            break;
-
-          case WorldConfig.OBJECTS.BUSH_DIRT:
-            textureKey = `bush_dirt_${Math.floor(Math.random() * 4)}`;
-            originY = 0.85;
-            ySort = false;
-            break;
+            case WorldConfig.OBJECTS.ROCK_SMALL:
+                textureKey = 'rock_small'; originY = 0.7; ySort = false; break;
+            case WorldConfig.OBJECTS.ROCK_MEDIUM:
+                textureKey = 'rock_medium'; originY = 0.8; ySort = false; break;
+            case WorldConfig.OBJECTS.ROCK_LARGE:
+                textureKey = 'rock_large'; originY = 0.85; break;
+            case WorldConfig.OBJECTS.FLOWER:
+                textureKey = `flower_${Math.floor(Math.random() * 16)}`; originY = 0.8; ySort = false; break;
+            case WorldConfig.OBJECTS.BUSH_SAND:
+                textureKey = `bush_sand_${Math.floor(Math.random() * 4)}`; originY = 0.85; ySort = false; break;
+            case WorldConfig.OBJECTS.BUSH_GRASS:
+                textureKey = `bush_grass_${Math.floor(Math.random() * 4)}`; originY = 0.85; ySort = false; break;
+            case WorldConfig.OBJECTS.BUSH_DIRT:
+                textureKey = `bush_dirt_${Math.floor(Math.random() * 4)}`; originY = 0.85; ySort = false; break;
         }
 
-        // Posición final con pequeño desplazamiento aleatorio (jitter)
         const baseX = gx * 2.5;
         const baseY = gy * 2.5;
-        const worldX = baseX + (Math.random() * randomOffset - randomOffset / 2);
-        const worldY = baseY + (Math.random() * randomOffset - randomOffset / 2);
+        const worldX = baseX + (Math.random() * 2 - 1);
+        const worldY = baseY + (Math.random() * 2 - 1);
 
-        // Crear sprite
         const sprite = this.scene.add.image(worldX, worldY, textureKey);
         sprite.setOrigin(0.5, originY);
-        // Trees & large rocks: Y-sort (can appear in front of player)
-        // Everything else: fixed low depth (always behind player)
         sprite.setDepth(ySort ? worldY : 2);
         sprite.chunkKey = chunkKey;
+        sprite.gridIndex = index;
 
         this.treesGroup.add(sprite);
+        this.spriteMap.set(index, sprite);
       }
     }
   }
 
+  getVegetationInRadius(playerX, playerY, radius) {
+    if (!this.vegetationData) return [];
 
+    const nearby = [];
+    const radiusSq = radius * radius;
+    const GRID_WIDTH = 8000;
+    const CELL_SIZE = 2.5;
+
+    const minGx = Math.floor((playerX - radius) / CELL_SIZE);
+    const maxGx = Math.ceil((playerX + radius) / CELL_SIZE);
+    const minGy = Math.floor((playerY - radius) / CELL_SIZE);
+    const maxGy = Math.ceil((playerY + radius) / CELL_SIZE);
+
+    for (let gy = Math.max(0, minGy); gy < Math.min(GRID_WIDTH, maxGy); gy++) {
+      for (let gx = Math.max(0, minGx); gx < Math.min(GRID_WIDTH, maxGx); gx++) {
+        const index = gy * GRID_WIDTH + gx;
+        const objType = this.vegetationData[index];
+
+        if (objType > 0) {
+          const objX = gx * CELL_SIZE;
+          const objY = gy * CELL_SIZE;
+          const dx = objX - playerX;
+          const dy = objY - playerY;
+
+          if (dx * dx + dy * dy <= radiusSq) {
+            nearby.push({
+              x: objX,
+              y: objY,
+              type: objType,
+              gridIndex: index,
+              sprite: this.spriteMap.get(index) || null,
+            });
+          }
+        }
+      }
+    }
+    return nearby;
+  }
 }

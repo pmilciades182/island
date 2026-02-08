@@ -37,32 +37,94 @@
       position: fixed;
       left: 0;
       top: 0;
-      width: 280px;
+      width: 320px;
       height: 100vh;
-      background: #111;
-      color: #00ff88;
+      background: #18181b;
+      color: #a1a1aa;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 12px;
       line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      z-index: 99999;
+      border-right: 1px solid #27272a;
+    }
+    #debug-panel input {
+      width: calc(100% - 24px);
+      margin: 12px 12px 0;
+      padding: 8px 10px;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      color: #e4e4e7;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    #debug-panel input:focus {
+      outline: none;
+      border-color: #52525b;
+    }
+    #debug-logs {
       padding: 12px;
       overflow-y: auto;
-      z-index: 99999;
-      border-right: 1px solid #333;
+      flex-grow: 1;
     }
-    #debug-panel .section {
-      color: #888;
+    #debug-panel details {
+      border-bottom: 1px solid #27272a;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+    }
+    #debug-panel details[open] summary {
+      color: #e4e4e7;
+    }
+    #debug-panel summary {
+      cursor: pointer;
+      font-weight: 500;
+      padding: 4px 0;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+     #debug-panel summary::-webkit-details-marker {
+      display: none;
+    }
+    #debug-panel .log-content {
       margin-top: 8px;
-      border-bottom: 1px solid #222;
-      padding-bottom: 2px;
-      margin-bottom: 2px;
+      background: #09090b;
+      padding: 8px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      color: #a1a1aa;
+      font-size: 11px;
     }
-    #debug-panel .warn { color: #ffaa00; }
-    #debug-panel .err { color: #ff4444; }
+    #debug-panel .log-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    #debug-panel button {
+      background: #3f3f46;
+      border: none;
+      color: #fafafa;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 10px;
+    }
+    #debug-panel button:hover {
+      background: #52525b;
+    }
+    #debug-panel .warn { color: #facc15; }
+    #debug-panel .err { color: #f87171; }
   </style>
 </head>
 
 <body>
-  <div id="debug-panel">DEBUG: Waiting for game...</div>
+  <div id="debug-panel">
+    <input type="text" id="debug-search" placeholder="Search logs...">
+    <div id="debug-logs"></div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
   <script src="js/lib/noise.js"></script>
   <script type="module" src="js/world/WorldConfig.js"></script>
@@ -73,6 +135,8 @@
   <script type="module" src="js/ui/HUD.js"></script>
   <script type="module" src="js/world/DayNightCycle.js"></script>
   <script type="module" src="js/world/VegetationManager.js"></script>
+  <script type="module" src="js/world/ProximityManager.js"></script>
+  <script type="module" src="js/world/TaskDistributor.js"></script>
   <script src="js/scenes/MenuScene.js"></script>
   <script type="module" src="js/scenes/GameScene.js"></script>
   <script src="js/main.js"></script>

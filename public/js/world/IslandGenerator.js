@@ -135,4 +135,39 @@ export class IslandGenerator {
         if (x < 0 || x >= this.gridSize || y < 0 || y >= this.gridSize) return 0;
         return this.data[y * this.gridSize + x];
     }
+
+    getTerrainInRadius(worldX, worldY, radius) {
+        if (!this.data) return [];
+
+        const nearby = [];
+        const radiusSq = radius * radius;
+        const TILE_SIZE = this.tileSize;
+        const GRID_SIZE = this.gridSize;
+
+        // Bounding box in grid coordinates
+        const minGx = Math.floor((worldX - radius) / TILE_SIZE);
+        const maxGx = Math.ceil((worldX + radius) / TILE_SIZE);
+        const minGy = Math.floor((worldY - radius) / TILE_SIZE);
+        const maxGy = Math.ceil((worldY + radius) / TILE_SIZE);
+
+        for (let gy = Math.max(0, minGy); gy < Math.min(GRID_SIZE, maxGy); gy++) {
+            for (let gx = Math.max(0, minGx); gx < Math.min(GRID_SIZE, maxGx); gx++) {
+                const tileX = gx * TILE_SIZE;
+                const tileY = gy * TILE_SIZE;
+                const dx = tileX - worldX;
+                const dy = tileY - worldY;
+
+                if (dx * dx + dy * dy <= radiusSq) {
+                    const index = gy * GRID_SIZE + gx;
+                    nearby.push({
+                        x: tileX,
+                        y: tileY,
+                        type: this.data[index],
+                        gridIndex: index,
+                    });
+                }
+            }
+        }
+        return nearby;
+    }
 }

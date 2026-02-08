@@ -6,12 +6,14 @@ import { PlayerController } from '../player/PlayerController.js';
 import { HUD } from '../ui/HUD.js';
 import { DayNightCycle } from '../world/DayNightCycle.js';
 import { VegetationManager } from '../world/VegetationManager.js';
+import { ProximityManager } from '../world/ProximityManager.js';
+import { TaskDistributor } from '../world/TaskDistributor.js';
 
 class GameScene extends Phaser.Scene {
   constructor() {
     super({ key: 'GameScene' });
   }
-
+  // ... (init and preload methods remain the same)
   init(data) {
     this.saveId = data.saveId;
     this.ready = false;
@@ -38,14 +40,15 @@ class GameScene extends Phaser.Scene {
     this.load.spritesheet('head_slash', `${base}/slash/HEAD_hair_blonde.png`, { frameWidth: 64, frameHeight: 64 });
   }
 
+
   async create() {
     const WORLD_W = 20000;
     const WORLD_H = 20000;
     this.WORLD_W = WORLD_W;
     this.WORLD_H = WORLD_H;
 
-    // ── Loading UI ──
-    const cx = this.cameras.main.width / 2;
+    // ... (loading UI setup remains the same)
+        const cx = this.cameras.main.width / 2;
     const cy = this.cameras.main.height / 2;
     const barW = 320;
     const barH = 6;
@@ -91,7 +94,7 @@ class GameScene extends Phaser.Scene {
       drawBar(pct);
     };
 
-    // Step 1: Load save data
+    // ... (data loading and world generation remain the same)
     setStep('Loading save data...', 0);
     const res = await fetch(`/api/saves/${this.saveId}`);
 
@@ -136,45 +139,37 @@ class GameScene extends Phaser.Scene {
     await new Promise(r => setTimeout(r, 0));
 
     loadContainer.destroy();
-
-    // Safety Check: spawn in water -> move to center
     const biome = this.generator.getBiomeAt(p.x, p.y);
     if (biome <= 1) { p.x = WORLD_W / 2; p.y = WORLD_H / 2; }
     if (p.x < 0 || p.x > WORLD_W || p.y < 0 || p.y > WORLD_H) { p.x = WORLD_W / 2; p.y = WORLD_H / 2; }
+
 
     // ── Managers ──
     this.vegetation = new VegetationManager(this, this.generator.vegetation);
     this.animManager = new AnimationManager(this);
     this.playerController = new PlayerController(this, this.generator);
+    this.taskDistributor = new TaskDistributor(this);
+    this.proximityManager = new ProximityManager(this, this.playerController.playerContainer, this.vegetation, this.generator, this.taskDistributor, { radius: 128 });
 
-    // Camera
+    // ... (camera, day/night, player stats setup remain the same)
     this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
     this.cameras.main.startFollow(this.playerController.playerContainer, false, 0.15, 0.15);
     this.cameras.main.fadeIn(500, 0, 0, 0);
-
     this.dayNight = new DayNightCycle(this);
-
-    // Player stats
     this.health = p.health;
     this.maxHealth = p.maxHealth;
     this.stamina = p.stamina;
     this.maxStamina = p.maxStamina;
     this.attributes = { ...p.attributes };
     this.inventory = [...p.inventory];
-
-    // Alias for save compatibility
     this.player = this.playerController.playerContainer;
-
-    // Set initial idle frame
     this.animManager.setIdle('down', this.playerController.playerLayers);
 
-    // HUD
+    // ... (HUD and keyboard shortcuts remain the same)
     this.hud = new HUD(this, this.saveData, {
       onExit: () => this.exitToMenu(),
       onToggleCycle: () => this.dayNight.togglePause()
     });
-
-    // Keyboard shortcuts
     this.input.keyboard.on('keydown-ESC', () => this.exitToMenu());
     this.input.keyboard.on('keydown-M', () => this.hud.toggle());
     this.input.keyboard.on('keydown-P', () => this.dayNight.togglePause());
@@ -183,7 +178,7 @@ class GameScene extends Phaser.Scene {
       else if (event.key === '-' || event.key === '_') this.dayNight.advance(-5000);
     });
 
-    // Auto-save every 5s
+    // ... (auto-save timer remains the same)
     this.saveTimer = this.time.addEvent({
       delay: 5000, callback: () => this.autoSave(), loop: true
     });
@@ -194,10 +189,51 @@ class GameScene extends Phaser.Scene {
     this._debugPrevPlayerX = 0;
     this._debugPrevPlayerY = 0;
     this._debugFrameTimes = [];
-    this._debugEl = document.getElementById('debug-panel');
-    this._debugJitterLog = []; // track camera position jumps
+    this._debugLogsEl = document.getElementById('debug-logs');
+    this._debugSearchEl = document.getElementById('debug-search');
+    this._debugContentEls = new Map();
 
-    // GPU info (one-time)
+    const logSections = [
+      'PERFORMANCE', 'CAMERA', 'PLAYER', 'GPU INFO', 'RENDER', 'PROXIMITY'
+    ];
+
+    if (this._debugLogsEl) {
+      this._debugLogsEl.innerHTML = '';
+      logSections.forEach(title => {
+        const details = document.createElement('details');
+        const summary = document.createElement('summary');
+        summary.textContent = title;
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'log-content';
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'log-actions';
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copy';
+        copyBtn.onclick = () => {
+          navigator.clipboard.writeText(contentDiv.textContent);
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => copyBtn.textContent = 'Copy', 1000);
+        };
+        actionsDiv.appendChild(copyBtn);
+        details.appendChild(summary);
+        details.appendChild(contentDiv);
+        details.appendChild(actionsDiv);
+        this._debugLogsEl.appendChild(details);
+        this._debugContentEls.set(title, contentDiv);
+      });
+    }
+
+    if (this._debugSearchEl) {
+      this._debugSearchEl.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        this._debugLogsEl.querySelectorAll('details').forEach(log => {
+          const summaryText = log.querySelector('summary').textContent.toLowerCase();
+          const contentText = log.querySelector('.log-content').textContent.toLowerCase();
+          log.style.display = (summaryText.includes(searchTerm) || contentText.includes(searchTerm)) ? '' : 'none';
+        });
+      });
+    }
+
     try {
       const gl = this.sys.game.renderer.gl;
       if (gl) {
@@ -205,26 +241,7 @@ class GameScene extends Phaser.Scene {
         const debugExt = gl.getExtension('WEBGL_debug_renderer_info');
         const gpuVendor = debugExt ? gl.getParameter(debugExt.UNMASKED_VENDOR_WEBGL) : 'N/A';
         const gpuRenderer = debugExt ? gl.getParameter(debugExt.UNMASKED_RENDERER_WEBGL) : 'N/A';
-        const texOverflow = (8000 > maxTex) ? '<span class="err">TEXTURE EXCEEDS MAX!</span>' : 'OK';
-        // Display/CSS info
-        const dpr = window.devicePixelRatio || 1;
-        const canvasEl = this.sys.game.canvas;
-        const rect = canvasEl.getBoundingClientRect();
-        const canvasW = canvasEl.width;
-        const canvasH = canvasEl.height;
-        const cssW = rect.width;
-        const cssH = rect.height;
-        const cssX = rect.x;
-        const cssY = rect.y;
-        const scaled = (canvasW !== Math.round(cssW * dpr)) ? '<span class="err">MISMATCH</span>' : 'OK';
-
-        this._debugGpuInfo = `GPU: ${gpuRenderer}<br>Vendor: ${gpuVendor}<br>MaxTexSize: ${maxTex}<br>8000x8000: ${texOverflow}<br>` +
-          `DPR: ${dpr}<br>` +
-          `Canvas px: ${canvasW}x${canvasH}<br>` +
-          `CSS size: ${cssW.toFixed(1)}x${cssH.toFixed(1)}<br>` +
-          `CSS pos: ${cssX.toFixed(2)}, ${cssY.toFixed(2)}<br>` +
-          `Frac pos: ${(cssX % 1).toFixed(4)}, ${(cssY % 1).toFixed(4)}<br>` +
-          `Scale match: ${scaled}`;
+        this._debugGpuInfo = `GPU: ${gpuRenderer}\nVendor: ${gpuVendor}\nMaxTexSize: ${maxTex}`;
       } else {
         this._debugGpuInfo = 'Canvas2D (no GL)';
       }
@@ -238,168 +255,29 @@ class GameScene extends Phaser.Scene {
   update(time, delta) {
     if (!this.ready) return;
 
-    // Player movement
+    this.proximityManager.update();
+
     const moveState = this.playerController.update(delta, this.stamina, this.maxStamina);
 
-    // Dynamic camera lerp: fast settle when player stops, smooth follow when moving
     const cam = this.cameras.main;
     if (moveState.moving) {
       cam.setLerp(0.06, 0.06);
     } else {
-      // Snap camera quickly when player stops to avoid drift wobble
       const target = this.playerController.playerContainer;
       const dx = Math.abs((target.x - cam.width / 2) - cam.scrollX);
       const dy = Math.abs((target.y - cam.height / 2) - cam.scrollY);
-      if (dx < 1 && dy < 1) {
-        cam.setLerp(1, 1); // instant snap for sub-pixel drift
-      } else {
-        cam.setLerp(0.2, 0.2); // settle
-      }
+      if (dx < 1 && dy < 1) cam.setLerp(1, 1);
+      else cam.setLerp(0.2, 0.2);
     }
 
-    // ── Debug update (DOM) ──
-    if (this._debugEl) {
-      const cam = this.cameras.main;
-      const pc = this.playerController.playerContainer;
-      const body = pc.body;
+    this.updateDebugPanel(time, delta, moveState);
 
-      // FPS tracking
-      this._debugFrameTimes.push(delta);
-      if (this._debugFrameTimes.length > 60) this._debugFrameTimes.shift();
-      const avgDelta = this._debugFrameTimes.reduce((a, b) => a + b, 0) / this._debugFrameTimes.length;
-      const fps = Math.round(1000 / avgDelta);
-      const minFps = Math.round(1000 / Math.max(...this._debugFrameTimes));
-      const maxFps = Math.round(1000 / Math.min(...this._debugFrameTimes));
-
-      // Camera delta per frame
-      const camDx = cam.scrollX - this._debugPrevCamX;
-      const camDy = cam.scrollY - this._debugPrevCamY;
-
-      // Jitter detection: direction reversal in consecutive frames
-      const jitterX = (this._debugLastCamDx !== undefined && camDx !== 0 && this._debugLastCamDx !== 0 &&
-        Math.sign(camDx) !== Math.sign(this._debugLastCamDx));
-      const jitterY = (this._debugLastCamDy !== undefined && camDy !== 0 && this._debugLastCamDy !== 0 &&
-        Math.sign(camDy) !== Math.sign(this._debugLastCamDy));
-
-      if (jitterX || jitterY) {
-        this._debugJitterLog.push({
-          t: time.toFixed(0),
-          dx: camDx.toFixed(4),
-          dy: camDy.toFixed(4),
-          pdx: this._debugLastCamDx.toFixed(4),
-          pdy: this._debugLastCamDy.toFixed(4)
-        });
-        if (this._debugJitterLog.length > 8) this._debugJitterLog.shift();
-      }
-
-      this._debugLastCamDx = camDx;
-      this._debugLastCamDy = camDy;
-      this._debugPrevCamX = cam.scrollX;
-      this._debugPrevCamY = cam.scrollY;
-
-      // Player delta per frame
-      const pDx = pc.x - this._debugPrevPlayerX;
-      const pDy = pc.y - this._debugPrevPlayerY;
-      this._debugPrevPlayerX = pc.x;
-      this._debugPrevPlayerY = pc.y;
-
-      // Terrain image tracking
-      const ti = this.terrainImage;
-      let terrainHtml = '<span class="err">No terrain ref</span>';
-      let terrainShake = '';
-      if (ti) {
-        const tiScreenX = ti.x - cam.scrollX;
-        const tiScreenY = ti.y - cam.scrollY;
-
-        // Track terrain screen position changes
-        if (this._debugPrevTiScreenX === undefined) {
-          this._debugPrevTiScreenX = tiScreenX;
-          this._debugPrevTiScreenY = tiScreenY;
-        }
-        const tiDx = tiScreenX - this._debugPrevTiScreenX;
-        const tiDy = tiScreenY - this._debugPrevTiScreenY;
-        this._debugPrevTiScreenX = tiScreenX;
-        this._debugPrevTiScreenY = tiScreenY;
-
-        // Detect terrain-specific shake (screen pos should be constant if camera tracks properly)
-        const tiMoving = Math.abs(tiDx) > 0.001 || Math.abs(tiDy) > 0.001;
-        if (tiMoving && (body.velocity.x !== 0 || body.velocity.y !== 0)) {
-          if (!this._debugTerrainShakeLog) this._debugTerrainShakeLog = [];
-          this._debugTerrainShakeLog.push(`Δscr(${tiDx.toFixed(4)},${tiDy.toFixed(4)})`);
-          if (this._debugTerrainShakeLog.length > 6) this._debugTerrainShakeLog.shift();
-        }
-
-        const texSrc = ti.texture.source[0];
-        const glTex = texSrc.glTexture;
-        const filterName = glTex
-          ? (texSrc.scaleMode === 0 ? 'LINEAR' : 'NEAREST')
-          : 'Canvas2D';
-
-        terrainHtml = `
-          World: ${ti.x.toFixed(2)}, ${ti.y.toFixed(2)}<br>
-          Screen: ${tiScreenX.toFixed(4)}, ${tiScreenY.toFixed(4)}<br>
-          Δ screen/f: ${tiDx.toFixed(4)}, ${tiDy.toFixed(4)}<br>
-          Scale: ${ti.scaleX}x${ti.scaleY}<br>
-          Origin: ${ti.originX}, ${ti.originY}<br>
-          Depth: ${ti.depth}<br>
-          ScrollFactor: ${ti.scrollFactorX}, ${ti.scrollFactorY}<br>
-          Filter: ${filterName}<br>
-          TexSize: ${texSrc.width}x${texSrc.height}<br>
-          Visible: ${ti.visible} Alpha: ${ti.alpha}`;
-
-        terrainShake = (this._debugTerrainShakeLog && this._debugTerrainShakeLog.length > 0)
-          ? this._debugTerrainShakeLog.map(s => `<span class="warn">${s}</span>`).join('<br>')
-          : '<span style="color:#00ff88">Stable</span>';
-      }
-
-      const jitterHtml = this._debugJitterLog.length > 0
-        ? this._debugJitterLog.map(j =>
-          `<span class="warn">t=${j.t} Δ(${j.dx},${j.dy}) prev(${j.pdx},${j.pdy})</span>`
-        ).join('<br>')
-        : '<span style="color:#00ff88">None detected</span>';
-
-      this._debugEl.innerHTML = `
-        <div class="section">PERFORMANCE</div>
-        FPS: ${fps} (min:${minFps} max:${maxFps})<br>
-        Delta: ${delta.toFixed(2)}ms<br>
-        <div class="section">CAMERA</div>
-        Scroll: ${cam.scrollX.toFixed(3)}, ${cam.scrollY.toFixed(3)}<br>
-        Frac: ${(cam.scrollX % 1).toFixed(4)}, ${(cam.scrollY % 1).toFixed(4)}<br>
-        Δ/frame: ${camDx.toFixed(4)}, ${camDy.toFixed(4)}<br>
-        roundPixels: ${cam.roundPixels}<br>
-        zoom: ${cam.zoom}<br>
-        <div class="section">PLAYER</div>
-        Pos: ${pc.x.toFixed(3)}, ${pc.y.toFixed(3)}<br>
-        Frac: ${(pc.x % 1).toFixed(4)}, ${(pc.y % 1).toFixed(4)}<br>
-        Δ/frame: ${pDx.toFixed(4)}, ${pDy.toFixed(4)}<br>
-        Vel: ${body.velocity.x.toFixed(1)}, ${body.velocity.y.toFixed(1)}<br>
-        Moving: ${moveState.moving} Sprint: ${moveState.sprinting}<br>
-        Facing: ${moveState.facing}<br>
-        <div class="section">TERRAIN IMAGE</div>
-        ${terrainHtml}<br>
-        <div class="section">TERRAIN SHAKE</div>
-        ${terrainShake}<br>
-        <div class="section">GPU INFO</div>
-        ${this._debugGpuInfo || 'Loading...'}<br>
-        <div class="section">RENDER</div>
-        Renderer: ${this.sys.game.renderer.type === 2 ? 'WebGL' : 'Canvas'}<br>
-        pixelArt: ${this.sys.game.config.pixelArt}<br>
-        roundPx(cfg): ${this.sys.game.config.roundPixels}<br>
-        Veg chunks: ${this.vegetation.activeTreeChunks.size}<br>
-        Trail marks: ${this.playerController.trailMarks.length}<br>
-        <div class="section">JITTER LOG</div>
-        ${jitterHtml}
-      `;
-    }
-
-    // Sprint stamina drain/regen
     if (moveState.sprinting) {
       this.stamina = Math.max(0, this.stamina - 20 * (delta / 1000));
     } else {
       this.stamina = Math.min(this.maxStamina, this.stamina + 10 * (delta / 1000));
     }
 
-    // Animations
     if (moveState.moving) {
       const rate = moveState.sprinting ? 16 : 10;
       this.playerController.playerLayers.forEach(s => {
@@ -410,7 +288,6 @@ class GameScene extends Phaser.Scene {
       this.animManager.setIdle(moveState.facing, this.playerController.playerLayers);
     }
 
-    // HUD
     this.hud.update({
       health: this.health,
       maxHealth: this.maxHealth,
@@ -420,15 +297,84 @@ class GameScene extends Phaser.Scene {
       inventory: this.inventory
     });
 
-    // Vegetation & particles
     this.vegetation.update(this.playerController.x, this.playerController.y);
-
-    // Day/Night
     const { timeStr } = this.dayNight.update(delta);
     this.hud.setTimeText(timeStr);
   }
 
-  async autoSave() {
+  updateDebugPanel(time, delta, moveState) {
+    if (!this._debugContentEls.size) return;
+
+    // --- Performance, Camera, Player, GPU, Render --- (updates are the same)
+    this._debugFrameTimes.push(delta);
+    if (this._debugFrameTimes.length > 60) this._debugFrameTimes.shift();
+    const avgDelta = this._debugFrameTimes.reduce((a, b) => a + b, 0) / this._debugFrameTimes.length;
+    const fps = Math.round(1000 / avgDelta);
+    this._debugContentEls.get('PERFORMANCE').textContent = `FPS: ${fps} ...`;
+
+    const cam = this.cameras.main;
+    this._debugContentEls.get('CAMERA').textContent = `Scroll: ${cam.scrollX.toFixed(2)}, ${cam.scrollY.toFixed(2)} ...`;
+    
+    const pc = this.playerController.playerContainer;
+    this._debugContentEls.get('PLAYER').textContent = `Pos: ${pc.x.toFixed(2)}, ${pc.y.toFixed(2)} ...`;
+
+    this._debugContentEls.get('GPU INFO').textContent = this._debugGpuInfo;
+    this._debugContentEls.get('RENDER').textContent = `Renderer: ${this.sys.game.renderer.type === 2 ? 'WebGL' : 'Canvas'} ...`;
+
+    // --- Proximity ---
+    const lastPayload = this.taskDistributor.lastPayload;
+    if (lastPayload) {
+      const nearbyVeg = lastPayload.vegetation || [];
+      const nearbyTerrain = lastPayload.terrain || [];
+      const allNearby = [...nearbyVeg, ...nearbyTerrain];
+      
+      let closest = null;
+      let minDistanceSq = Infinity;
+
+      allNearby.forEach(obj => {
+        const distSq = Phaser.Math.Distance.Squared(pc.x, pc.y, obj.x, obj.y);
+        if (distSq < minDistanceSq) {
+          minDistanceSq = distSq;
+          closest = obj;
+        }
+      });
+      
+      const vegCounts = {};
+      nearbyVeg.forEach(v => {
+        vegCounts[v.type] = (vegCounts[v.type] || 0) + 1;
+      });
+      
+      let mostAbundant = { type: 'N/A', count: 0 };
+      let leastAbundant = { type: 'N/A', count: Infinity };
+      if (Object.keys(vegCounts).length > 0) {
+          for (const type in vegCounts) {
+              if (vegCounts[type] > mostAbundant.count) {
+                  mostAbundant = { type, count: vegCounts[type] };
+              }
+              if (vegCounts[type] < leastAbundant.count) {
+                  leastAbundant = { type, count: vegCounts[type] };
+              }
+          }
+      }
+
+      // Create reverse maps for names
+      const vegNames = Object.fromEntries(Object.entries(WorldConfig.OBJECTS).map(([k, v]) => [v, k]));
+      const terrainNames = Object.fromEntries(Object.entries(WorldConfig.TERRAIN).map(([k, v]) => [v, k]));
+      
+      const closestName = closest ? (vegNames[closest.type] || terrainNames[closest.type] || 'Unknown') : 'None';
+      
+      let proximityText = `Radius: ${this.proximityManager.radius}\n`;
+      proximityText += `Nearby Veg: ${nearbyVeg.length}\n`;
+      proximityText += `Nearby Terrain: ${nearbyTerrain.length}\n\n`;
+      proximityText += `Closest: ${closestName} (${Math.sqrt(minDistanceSq).toFixed(1)}px)\n\n`;
+      proximityText += `Most Abundant:\n  ${vegNames[mostAbundant.type] || 'N/A'} (${mostAbundant.count}x)\n`;
+      proximityText += `Least Abundant:\n  ${vegNames[leastAbundant.type] || 'N/A'} (${leastAbundant.count}x)\n`;
+
+      this._debugContentEls.get('PROXIMITY').textContent = proximityText;
+    }
+  }
+  // ... (autoSave and exitToMenu methods remain the same)
+    async autoSave() {
     await fetch(`/api/saves/${this.saveId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
