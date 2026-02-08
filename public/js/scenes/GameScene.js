@@ -9,6 +9,7 @@ import { VegetationManager } from '../world/VegetationManager.js';
 import { ProximityManager } from '../world/ProximityManager.js';
 import { TaskDistributor } from '../world/TaskDistributor.js';
 import { InteractIndicator } from '../ui/InteractIndicator.js';
+import { InteractPopup } from '../ui/InteractPopup.js';
 
 class GameScene extends Phaser.Scene {
   constructor() {
@@ -178,6 +179,19 @@ class GameScene extends Phaser.Scene {
 
     // Interaction Indicator (Firefly-like)
     this.interactIndicator = new InteractIndicator(this);
+
+    // Interaction Popup
+    this.interactPopup = new InteractPopup(this);
+
+    // E key for interaction
+    this.input.keyboard.on('keydown-E', () => {
+      const target = this.interactIndicator.currentObject;
+      if (this.interactPopup.isOpen) {
+        this.interactPopup.close();
+      } else if (target) {
+        this.interactPopup.open(target);
+      }
+    });
 
 
     // ... (auto-save timer remains the same)
