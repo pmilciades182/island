@@ -16,8 +16,8 @@ export const IDS = {
   FLOWER: Flower.ID,
   BUSH_SAND: BushSand.ID,
   BUSH_GRASS: BushGrass.ID,
-  BUSH_DIRT: BushDirt.ID
-  ,APPLE: Apple.ID
+  BUSH_DIRT: BushDirt.ID,
+  APPLE: Apple.ID
 };
 
 export const CONFIG = {
@@ -28,8 +28,8 @@ export const CONFIG = {
   FLOWER: Flower.CONFIG,
   BUSH_SAND: BushSand.CONFIG,
   BUSH_GRASS: BushGrass.CONFIG,
-  BUSH_DIRT: BushDirt.CONFIG
-  ,APPLE: Apple.CONFIG
+  BUSH_DIRT: BushDirt.CONFIG,
+  APPLE: Apple.CONFIG
 };
 
 // Palettes are now available as `CONFIG.*.colors` on each object module
