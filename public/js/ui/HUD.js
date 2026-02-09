@@ -44,7 +44,8 @@ export class HUD {
     closeBtn.add(cZone);
 
     // Header Info - Player Name
-    this.hudName = scene.add.text(32, 60, saveData.name.toUpperCase(), {
+    const playerName = (saveData && (saveData.name || (saveData.player && saveData.player.name))) || 'PLAYER';
+    this.hudName = scene.add.text(32, 60, String(playerName).toUpperCase(), {
       fontSize: '20px',
       fontFamily: '"Rubik", sans-serif',
       color: '#ffffff',

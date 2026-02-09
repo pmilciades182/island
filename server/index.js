@@ -13,8 +13,8 @@ let nextId = 1;
 
 function createDefaultPlayer() {
   return {
-    x: 14198.63,
-    y: 5096.35,
+    x: 16975.83,
+    y: 10329.03,
     health: 100,
     maxHealth: 100,
     stamina: 100,
