@@ -1,6 +1,15 @@
 import { WorldConfig } from './WorldConfig.js';
 import * as Objects from '../objects/index.js';
 import { createRNG } from '../util/rng.js';
+import { createTreeTextures } from '../objects/tree/textures.js';
+import { createRockSmallTextures } from '../objects/rock_small/textures.js';
+import { createRockMediumTextures } from '../objects/rock_medium/textures.js';
+import { createRockLargeTextures } from '../objects/rock_large/textures.js';
+import { createBushSandTextures } from '../objects/bush_sand/textures.js';
+import { createBushGrassTextures } from '../objects/bush_grass/textures.js';
+import { createBushDirtTextures } from '../objects/bush_dirt/textures.js';
+import { createFlowerTextures } from '../objects/flower/textures.js';
+import { createAppleTextures } from '../objects/apple/textures.js';
 
 export class VegetationManager {
   constructor(scene, vegetationData, seed = 0) {
@@ -14,7 +23,7 @@ export class VegetationManager {
     this.treesGroup = scene.add.group();
     this.activeTreeChunks = new Set();
 
-    // Create procedural textures
+    // Create procedural textures (delegated per-object)
     this._createTextures();
 
     // Atmospheric Particles
@@ -23,198 +32,18 @@ export class VegetationManager {
   }
 
   // ... _createTextures and _createParticles methods remain the same
-    _createTextures() {
+  _createTextures() {
     const scene = this.scene;
-
-    // Tree Texture (64x64)
-    const treeG = scene.add.graphics();
-    treeG.fillStyle(0x000000, 0.4);
-    treeG.fillEllipse(32, 58, 24, 10);
-    treeG.fillStyle(0x6B4E3C, 1);
-    treeG.fillRect(26, 40, 12, 18);
-    treeG.fillStyle(0x2D6238, 1);
-    treeG.fillCircle(32, 32, 24);
-    treeG.fillCircle(20, 40, 16);
-    treeG.fillCircle(44, 40, 16);
-    treeG.fillStyle(0x346640, 1);
-    treeG.fillCircle(32, 28, 18);
-    treeG.fillCircle(22, 36, 12);
-    treeG.fillCircle(42, 36, 12);
-    treeG.fillStyle(0x58A460, 1);
-    treeG.fillCircle(32, 24, 10);
-    treeG.generateTexture('tree', 64, 64);
-    treeG.destroy();
-
-    // Tree Dark Grass variant: yellowish/autumn foliage (64x64)
-    const treeDG = scene.add.graphics();
-    treeDG.fillStyle(0x000000, 0.4);
-    treeDG.fillEllipse(32, 58, 24, 10);
-    treeDG.fillStyle(0x6B4E3C, 1);
-    treeDG.fillRect(26, 40, 12, 18);
-    treeDG.fillStyle(0x7A8C32, 1);        // olive-yellow base
-    treeDG.fillCircle(32, 32, 24);
-    treeDG.fillCircle(20, 40, 16);
-    treeDG.fillCircle(44, 40, 16);
-    treeDG.fillStyle(0x9AA840, 1);        // yellow-green mid
-    treeDG.fillCircle(32, 28, 18);
-    treeDG.fillCircle(22, 36, 12);
-    treeDG.fillCircle(42, 36, 12);
-    treeDG.fillStyle(0xBBC24A, 1);        // bright yellow-green highlights
-    treeDG.fillCircle(32, 24, 10);
-    treeDG.generateTexture('tree_dark', 64, 64);
-    treeDG.destroy();
-
-    // Rock Small (16x16)
-    const r1 = scene.add.graphics();
-    r1.fillStyle(0x8A7A6B, 1);
-    r1.fillCircle(8, 8, 6);
-    r1.fillStyle(0x000000, 0.3);
-    r1.fillEllipse(8, 14, 8, 4);
-    r1.generateTexture('rock_small', 16, 16);
-    r1.destroy();
-
-    // Rock Medium (32x32)
-    const r2 = scene.add.graphics();
-    r2.fillStyle(0x8A7A6B, 1);
-    r2.fillCircle(16, 16, 12);
-    r2.fillStyle(0xA89B8E, 1);
-    r2.fillCircle(12, 12, 8);
-    r2.fillStyle(0x000000, 0.3);
-    r2.fillEllipse(16, 28, 16, 6);
-    r2.generateTexture('rock_medium', 32, 32);
-    r2.destroy();
-
-    // Rock Large (64x64)
-    const r3 = scene.add.graphics();
-    r3.fillStyle(0x6B5D54, 1);
-    r3.fillCircle(32, 32, 24);
-    r3.fillStyle(0x8A7A6B, 1);
-    r3.fillCircle(24, 24, 16);
-    r3.fillStyle(0x000000, 0.3);
-    r3.fillEllipse(32, 56, 32, 10);
-    r3.generateTexture('rock_large', 64, 64);
-    r3.destroy();
-
-    const finalSandPalette = (Objects.CONFIG.BUSH_SAND && Objects.CONFIG.BUSH_SAND.colors) || [0xA8B06A, 0xB5A86B, 0x8E9960, 0xC2B87A];
-    finalSandPalette.forEach((color, i) => {
-      const b = scene.add.graphics();
-      // 1. Sombra en el suelo (un poco más alargada para base triangular)
-      b.fillStyle(0x000000, 0.28);
-      b.fillEllipse(16, 23, 30, 9);           // ← ligeramente más ancha
-      // 2. Base del arbusto (elíptica pero un poco más alta para dar altura triangular)
-      b.fillStyle(color, 1);
-      b.fillEllipse(16, 16, 24, 16);          // base más vertical
-      // 3. Parte central: punta principal alargada (como fronda central de palmera)
-      const bright = Phaser.Display.Color.IntegerToColor(color).brighten(20 + (i % 12)).color;
-      b.fillStyle(bright, 1);
-      // Triángulo central puntiagudo (punta arriba)
-      b.fillTriangle(
-        16, 6,          // punta superior
-        10, 14,         // base izquierda
-        22, 14          // base derecha
-      );
-      // Refuerzo central con elipse para volumen
-      b.fillEllipse(16, 13, 10, 12);
-      // 4. Dos "hojas" laterales puntiagudas (estilo palmera seca, inclinadas)
-      const mid = Phaser.Display.Color.IntegerToColor(bright).lighten(8).color;
-      b.fillStyle(mid, 0.95);
-      // Hoja izquierda: triangular inclinada hacia izquierda
-      b.fillTriangle(
-        8 + (i % 3 - 1), 9,     // punta
-        4 + (i % 2), 16,     // base inferior izquierda
-        14 + (i % 3), 15      // base inferior derecha
-      );
-      // Hoja derecha: triangular inclinada hacia derecha
-      b.fillStyle(Phaser.Display.Color.IntegerToColor(mid).brighten(5).color, 0.92);
-      b.fillTriangle(
-        24 - (i % 3 - 1), 9,     // punta
-        18 - (i % 2), 15,     // base inferior izquierda
-        28 - (i % 3), 16      // base inferior derecha
-      );
-      // 5. Detalle sutil: arenilla o puntas secas (opcional, para textura desértica)
-      b.fillStyle(0xf0e0c0, 0.7);
-      b.fillCircle(16, 7, 1.2);               // puntita clara en la cima
-      if (i % 2 === 0) {
-        b.fillCircle(9, 10, 1.0);
-        b.fillCircle(23, 10, 1.0);
-      }
-      // Generar textura (mismo tamaño original)
-      b.generateTexture(`bush_sand_${i}`, 32, 24);
-      b.destroy();
-    });
-    
-    // Bush Grass: round and leafy, taller (28x28)
-    const finalGrassPalette = (Objects.CONFIG.BUSH_GRASS && Objects.CONFIG.BUSH_GRASS.colors) || [0x4A8C3F, 0x5DA84E, 0x3B7A34, 0x6BB85A];
-    finalGrassPalette.forEach((color, i) => {
-      const b = scene.add.graphics();
-      b.fillStyle(0x000000, 0.25);
-      b.fillEllipse(14, 26, 22, 6);
-      b.fillStyle(color, 1);
-      b.fillCircle(14, 16, 12);
-      b.fillCircle(8, 18, 8);
-      b.fillCircle(20, 18, 8);
-      b.fillStyle(Phaser.Display.Color.IntegerToColor(color).brighten(20).color, 1);
-      b.fillCircle(14, 12, 7);
-      b.fillCircle(10, 16, 5);
-      b.generateTexture(`bush_grass_${i}`, 28, 28);
-      b.destroy();
-    });
-
-    // Bush Dirt: gnarled woody shrub with twisted branches (32x28)
-    const finalDirtPalette = (Objects.CONFIG.BUSH_DIRT && Objects.CONFIG.BUSH_DIRT.colors) || [0x6B7A3A, 0x5C6832, 0x7A8844, 0x4E5B2B];
-    finalDirtPalette.forEach((color, i) => {
-      const b = scene.add.graphics();
-      const dark = Phaser.Display.Color.IntegerToColor(color).darken(25).color;
-      const light = Phaser.Display.Color.IntegerToColor(color).brighten(18).color;
-      // Shadow
-      b.fillStyle(0x000000, 0.2);
-      b.fillEllipse(16, 26, 26, 5);
-      // Woody stems
-      b.fillStyle(0x5C4033, 1);
-      b.fillRect(14, 18, 3, 8);
-      b.fillRect(9, 16, 2, 7);
-      b.fillRect(20, 17, 2, 6);
-      // Dense foliage clusters at different heights
-      b.fillStyle(dark, 1);
-      b.fillCircle(10, 13, 7);
-      b.fillCircle(22, 14, 6);
-      b.fillCircle(16, 10, 8);
-      // Mid layer
-      b.fillStyle(color, 1);
-      b.fillCircle(12, 11, 6);
-      b.fillCircle(20, 12, 5);
-      b.fillCircle(16, 8, 6);
-      // Highlights
-      b.fillStyle(light, 1);
-      b.fillCircle(14, 7, 3);
-      b.fillCircle(10, 10, 2.5);
-      b.fillCircle(20, 10, 2);
-      b.generateTexture(`bush_dirt_${i}`, 32, 28);
-      b.destroy();
-    });
-
-    // Flower Textures (16 colors)
-    const flowerPalette = (Objects.CONFIG.FLOWER && Objects.CONFIG.FLOWER.colors) || [
-      0xE74C3C, 0xF39C12, 0xF1C40F, 0xE8DAEF, 0xAF7AC5, 0x5DADE2,
-      0x48C9B0, 0x52BE80, 0xF8B88B, 0xEC7063, 0xF7DC6F, 0xBB8FCE,
-      0x85C1E2, 0x76D7C4, 0xF5B7B1, 0xFAD7A0
-    ];
-    flowerPalette.forEach((color, index) => {
-      const f = scene.add.graphics();
-      f.fillStyle(0x000000, 0.3);
-      f.fillEllipse(8, 14, 6, 3);
-      f.fillStyle(0x3D6142, 1);
-      f.fillRect(7, 8, 2, 6);
-      f.fillStyle(color, 1);
-      f.fillCircle(8, 5, 2.5);
-      f.fillCircle(8, 11, 2.5);
-      f.fillCircle(5, 8, 2.5);
-      f.fillCircle(11, 8, 2.5);
-      f.fillStyle(0xffd700, 1);
-      f.fillCircle(8, 8, 2);
-      f.generateTexture(`flower_${index}`, 16, 16);
-      f.destroy();
-    });
+    // delegate texture creation to per-object modules
+    createTreeTextures(scene);
+    createRockSmallTextures(scene);
+    createRockMediumTextures(scene);
+    createRockLargeTextures(scene);
+    createBushSandTextures(scene);
+    createBushGrassTextures(scene);
+    createBushDirtTextures(scene);
+    createFlowerTextures(scene);
+    createAppleTextures(scene);
   }
 
   _createParticles() {
@@ -429,6 +258,8 @@ export class VegetationManager {
             textureKey = `bush_grass_${this.rng ? this.rng.int(4) : Math.floor(Math.random() * 4)}`; originY = 0.85; ySort = false; break;
           case Objects.IDS.BUSH_DIRT:
             textureKey = `bush_dirt_${this.rng ? this.rng.int(4) : Math.floor(Math.random() * 4)}`; originY = 0.85; ySort = false; break;
+          case Objects.IDS.APPLE:
+            textureKey = 'apple_spr'; originY = 0.6; ySort = true; break;
         }
 
         const baseX = gx * 2.5;
@@ -438,7 +269,12 @@ export class VegetationManager {
 
         const sprite = this.scene.add.image(worldX, worldY, textureKey);
         sprite.setOrigin(0.5, originY);
-        sprite.setDepth(ySort ? worldY : 2);
+        // Ensure apples render above trees: if apple, push depth slightly higher than worldY
+        if (objType === Objects.IDS.APPLE) {
+          sprite.setDepth(worldY + 1);
+        } else {
+          sprite.setDepth(ySort ? worldY : 2);
+        }
         sprite.chunkKey = chunkKey;
         sprite.gridIndex = index;
 

@@ -6,6 +6,7 @@ import * as Flower from './flower/vars.js';
 import * as BushSand from './bush_sand/vars.js';
 import * as BushGrass from './bush_grass/vars.js';
 import * as BushDirt from './bush_dirt/vars.js';
+import * as Apple from './apple/vars.js';
 
 export const IDS = {
   TREE: Tree.ID,
@@ -16,6 +17,7 @@ export const IDS = {
   BUSH_SAND: BushSand.ID,
   BUSH_GRASS: BushGrass.ID,
   BUSH_DIRT: BushDirt.ID
+  ,APPLE: Apple.ID
 };
 
 export const CONFIG = {
@@ -27,6 +29,7 @@ export const CONFIG = {
   BUSH_SAND: BushSand.CONFIG,
   BUSH_GRASS: BushGrass.CONFIG,
   BUSH_DIRT: BushDirt.CONFIG
+  ,APPLE: Apple.CONFIG
 };
 
 // Palettes are now available as `CONFIG.*.colors` on each object module
@@ -39,3 +42,4 @@ export { default as FlowerDef } from './flower/definition.js';
 export { default as BushSandDef } from './bush_sand/definition.js';
 export { default as BushGrassDef } from './bush_grass/definition.js';
 export { default as BushDirtDef } from './bush_dirt/definition.js';
+export { default as AppleDef } from './apple/definition.js';

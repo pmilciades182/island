@@ -19,6 +19,7 @@ export class IslandGenerator {
         const noise = this.noise;
         const data = this.data;
         const veg = this.vegetation;
+        const MIN_TREE_SPACING = 3; // minimum distance in grid tiles (~50% of tree size)
 
         // Pre-compute allowed terrain lookups as bitfields
         const T = WorldConfig.TERRAIN;
@@ -91,11 +92,32 @@ export class IslandGenerator {
                 // --- VEGETATION (skip water) ---
                 if (tileType <= 1) continue;
 
+                // if a vegetation/object was already placed here (e.g. an apple
+                // placed earlier by a neighboring tree), don't overwrite it.
+                if (veg[idx] !== 0) continue;
+
                 // Trees
                 if (treeTerrain[tileType]) {
                     const tn = noise.simplex2(nx * 400, ny * 400);
                     if (tn > 0.96) {
-                        veg[idx] = Objects.IDS.TREE;
+                        // Check minimum spacing: no tree within MIN_TREE_SPACING tiles
+                        let canPlace = true;
+                        for (let dy = -MIN_TREE_SPACING; dy <= MIN_TREE_SPACING && canPlace; dy++) {
+                            for (let dx = -MIN_TREE_SPACING; dx <= MIN_TREE_SPACING && canPlace; dx++) {
+                                if (dx === 0 && dy === 0) continue;
+                                const nx = x + dx;
+                                const ny = y + dy;
+                                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                    const nidx = ny * width + nx;
+                                    if (veg[nidx] === Objects.IDS.TREE) {
+                                        canPlace = false;
+                                    }
+                                }
+                            }
+                        }
+                        if (canPlace) {
+                            veg[idx] = Objects.IDS.TREE;
+                        }
                         continue;
                     }
                 }
@@ -129,6 +151,54 @@ export class IslandGenerator {
                 }
             }
         }
+        // --- APPLE GENERATION (separate pass, optimized for tree zones) ---
+        const APPLE_BASE_PROB = 0.25; // base 25% chance per-tree (more common)
+        const neighborRadius = 2; // measure local tree density in a 5x5 area
+        const offsets = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]];
+
+        for (let ty = 0; ty < height; ty++) {
+            const rowOffT = ty * width;
+            for (let tx = 0; tx < width; tx++) {
+                const tidx = rowOffT + tx;
+                if (veg[tidx] !== Objects.IDS.TREE) continue;
+
+                // compute local tree density
+                let treeNeighbors = 0;
+                for (let oy = -neighborRadius; oy <= neighborRadius; oy++) {
+                    const gy = ty + oy;
+                    if (gy < 0 || gy >= height) continue;
+                    const rowOffN = gy * width;
+                    for (let ox = -neighborRadius; ox <= neighborRadius; ox++) {
+                        const gx = tx + ox;
+                        if (gx < 0 || gx >= width) continue;
+                        if (ox === 0 && oy === 0) continue;
+                        if (veg[rowOffN + gx] === Objects.IDS.TREE) treeNeighbors++;
+                    }
+                }
+
+                // increase chance in denser tree patches (cap to avoid excess)
+                let prob = APPLE_BASE_PROB * (1 + (treeNeighbors / 2));
+                if (prob > 0.9) prob = 0.9;
+
+                const hash = ((tx * 73856093) ^ (ty * 19349663)) * 83492791;
+                const rand = (hash & 0xFFFF) / 65536.0;
+                if (rand >= prob) continue;
+
+                // pick a nearby free tile to place the apple
+                const pick = Math.floor((((hash >>> 16) & 0xFFFF) / 65536.0) * offsets.length);
+                const ox = offsets[pick][0];
+                const oy = offsets[pick][1];
+                const nxG = tx + ox;
+                const nyG = ty + oy;
+                if (nxG >= 0 && nxG < width && nyG >= 0 && nyG < height) {
+                    const nidx = nyG * width + nxG;
+                    if (veg[nidx] === 0 && data[nidx] > 1) {
+                        veg[nidx] = Objects.IDS.APPLE;
+                    }
+                }
+            }
+        }
+
         return { terrain: this.data, vegetation: this.vegetation };
     }
 
