@@ -154,7 +154,7 @@ export class IslandGenerator {
         // --- APPLE GENERATION (separate pass, optimized for tree zones) ---
         const APPLE_BASE_PROB = 0.25; // base 25% chance per-tree (more common)
         const neighborRadius = 2; // measure local tree density in a 5x5 area
-        const offsets = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]];
+        const APPLE_SEARCH_RADIUS = 15; // search within 15 tiles of tree for placement (large range)
 
         for (let ty = 0; ty < height; ty++) {
             const rowOffT = ty * width;
@@ -184,16 +184,35 @@ export class IslandGenerator {
                 const rand = (hash & 0xFFFF) / 65536.0;
                 if (rand >= prob) continue;
 
-                // pick a nearby free tile to place the apple
-                const pick = Math.floor((((hash >>> 16) & 0xFFFF) / 65536.0) * offsets.length);
-                const ox = offsets[pick][0];
-                const oy = offsets[pick][1];
-                const nxG = tx + ox;
-                const nyG = ty + oy;
-                if (nxG >= 0 && nxG < width && nyG >= 0 && nyG < height) {
-                    const nidx = nyG * width + nxG;
-                    if (veg[nidx] === 0 && data[nidx] > 1) {
-                        veg[nidx] = Objects.IDS.APPLE;
+                // Generate apples in a large, varied radius around tree
+                // Create multiple candidates with different hash seeds
+                const candidates = [];
+                const hashBase = ((hash >>> 8) * 2246822519) >>> 0;
+                
+                // Generate 6+ candidate positions spread across full radius
+                for (let c = 0; c < 6; c++) {
+                    const hashC = ((hashBase + c * 1103515245) >>> 0) ^ (c * 12345);
+                    const angle = ((hashC & 0xFFF) / 4096.0) * Math.PI * 2;
+                    const distRatio = (((hashC >>> 12) & 0xFFF) / 4096.0); // 0.0 to 1.0 (full range)
+                    const distance = Math.round(distRatio * APPLE_SEARCH_RADIUS);
+                    
+                    const ox = Math.round(Math.cos(angle) * distance);
+                    const oy = Math.round(Math.sin(angle) * distance);
+                    
+                    candidates.push({ ox, oy });
+                }
+                
+                // Try to place at first available candidate
+                for (const { ox, oy } of candidates) {
+                    const appleX = tx + ox;
+                    const appleY = ty + oy;
+                    
+                    if (appleX >= 0 && appleX < width && appleY >= 0 && appleY < height) {
+                        const appleIdx = appleY * width + appleX;
+                        if (veg[appleIdx] === 0 && data[appleIdx] > 1) {
+                            veg[appleIdx] = Objects.IDS.APPLE;
+                            break; // placed successfully, move to next tree
+                        }
                     }
                 }
             }
