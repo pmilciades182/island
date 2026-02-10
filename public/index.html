@@ -49,6 +49,42 @@
       flex-direction: column;
       z-index: 99999;
       border-right: 1px solid #27272a;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    #debug-panel.collapsed {
+      transform: translateX(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    #debug-toggle {
+      position: fixed;
+      left: 12px;
+      bottom: 12px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      color: #a1a1aa;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 100000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.2s;
+    }
+    #debug-toggle:hover {
+      background: #3f3f46;
+      transform: scale(1.1);
+    }
+    #debug-panel.collapsed ~ #debug-toggle {
+      left: 12px;
+      bottom: 12px;
+    }
+    #debug-panel:not(.collapsed) ~ #debug-toggle {
+      left: 332px;
+      bottom: 12px;
     }
     #debug-panel input {
       width: calc(100% - 24px);
@@ -122,10 +158,18 @@
 </head>
 
 <body>
-  <div id="debug-panel">
+  <div id="debug-panel" class="collapsed">
     <input type="text" id="debug-search" placeholder="Search logs...">
     <div id="debug-logs"></div>
   </div>
+  <button id="debug-toggle" title="Toggle debug panel">{}</button>
+  <script>
+    document.getElementById('debug-toggle').addEventListener('click', function() {
+      var panel = document.getElementById('debug-panel');
+      var collapsed = panel.classList.toggle('collapsed');
+      this.textContent = collapsed ? '{}' : 'X';
+    });
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
   <script src="js/lib/noise.js"></script>
   <script type="module" src="js/world/WorldConfig.js"></script>
