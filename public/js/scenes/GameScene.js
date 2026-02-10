@@ -113,14 +113,13 @@ class GameScene extends Phaser.Scene {
 
     // ... (data loading and world generation remain the same)
     setStep('Loading save data...', 0);
-    const res = await fetch(`/api/saves/${this.saveId}`);
+    const loadedSave = SaveManager.get(this.saveId);
 
-    if (!res.ok) {
-      console.error("Save fetch failed:", res.status, res.statusText);
-      // You can decide to create new player or go back to menu
-      this.saveData = { player: this.getDefaultPlayer() }; // ← fallback
+    if (!loadedSave) {
+      console.error("Save not found:", this.saveId);
+      this.saveData = { player: this.getDefaultPlayer() };
     } else {
-      this.saveData = await res.json();
+      this.saveData = loadedSave;
     }
 
     const p = this.saveData.player;
@@ -316,27 +315,23 @@ class GameScene extends Phaser.Scene {
 
   
   // ... (autoSave and exitToMenu methods remain the same)
-  async autoSave() {
-    await fetch(`/api/saves/${this.saveId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        player: {
-          x: Math.round(this.player.x),
-          y: Math.round(this.player.y),
-          health: this.health,
-          stamina: this.stamina,
-          maxHealth: this.maxHealth,
-          maxStamina: this.maxStamina,
-          attributes: this.attributes,
-          inventory: this.inventory
-        }
-      })
+  autoSave() {
+    SaveManager.update(this.saveId, {
+      player: {
+        x: Math.round(this.player.x),
+        y: Math.round(this.player.y),
+        health: this.health,
+        stamina: this.stamina,
+        maxHealth: this.maxHealth,
+        maxStamina: this.maxStamina,
+        attributes: this.attributes,
+        inventory: this.inventory
+      }
     });
   }
 
-  async exitToMenu() {
-    await this.autoSave();
+  exitToMenu() {
+    this.autoSave();
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('MenuScene');

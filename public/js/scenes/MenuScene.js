@@ -160,8 +160,7 @@ class MenuScene extends Phaser.Scene {
   }
 
   async loadSaves() {
-    const res = await fetch('/api/saves');
-    const list = await res.json();
+    const list = SaveManager.list();
     this.clearSaveList();
     const cx = this.W / 2;
 
@@ -424,11 +423,8 @@ class MenuScene extends Phaser.Scene {
   //  ACTIONS
   // ══════════════════════════════════════
 
-  async onNewGame() {
-    const res = await fetch('/api/saves', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
-    });
-    const save = await res.json();
+  onNewGame() {
+    const save = SaveManager.create();
     this.startGame(save.id);
   }
 
@@ -445,8 +441,8 @@ class MenuScene extends Phaser.Scene {
         { label: 'Cancel', primary: false, action: 'cancel' },
         { label: 'Clone', primary: true, color: 0x2563eb, action: 'confirm' }
       ],
-      onConfirm: async () => {
-        await fetch(`/api/saves/${id}/clone`, { method: 'POST' });
+      onConfirm: () => {
+        SaveManager.clone(id);
         this.loadSaves();
       }
     });
@@ -465,12 +461,9 @@ class MenuScene extends Phaser.Scene {
         { label: 'Cancel', primary: false, action: 'cancel' },
         { label: 'Rename', primary: true, color: 0xd97706, action: 'confirm' }
       ],
-      onConfirm: async (newName) => {
+      onConfirm: (newName) => {
         if (newName === currentName) return;
-        await fetch(`/api/saves/${id}/rename`, {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: newName })
-        });
+        SaveManager.rename(id, newName);
         this.loadSaves();
       }
     });
@@ -487,8 +480,8 @@ class MenuScene extends Phaser.Scene {
         { label: 'Cancel', primary: false, action: 'cancel' },
         { label: 'Delete', primary: true, color: 0xdc2626, action: 'confirm' }
       ],
-      onConfirm: async () => {
-        await fetch(`/api/saves/${id}`, { method: 'DELETE' });
+      onConfirm: () => {
+        SaveManager.delete(id);
         this.loadSaves();
       }
     });
