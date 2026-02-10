@@ -17,16 +17,16 @@ export class InteractPopup {
     this.popupEl = document.createElement('div');
     this.popupEl.className = 'interact-popup';
     this.popupEl.style.cssText = `
-      position: fixed;
+      position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0.9);
       background: rgba(15, 15, 20, 0.95);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 24px;
-      min-width: 280px;
-      max-width: 360px;
+      border-radius: 10px;
+      padding: 16px;
+      min-width: 200px;
+      max-width: 280px;
       color: #fff;
       font-family: 'JetBrains Mono', monospace;
       z-index: 10000;
@@ -39,23 +39,23 @@ export class InteractPopup {
     // Header with object type
     this.headerEl = document.createElement('div');
     this.headerEl.style.cssText = `
-      font-size: 18px;
+      font-size: 14px;
       font-weight: 600;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       color: #F1C40F;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     `;
     this.popupEl.appendChild(this.headerEl);
 
     // Info container
     this.infoEl = document.createElement('div');
     this.infoEl.style.cssText = `
-      font-size: 13px;
+      font-size: 11px;
       color: #a1a1aa;
-      line-height: 1.6;
-      margin-bottom: 20px;
+      line-height: 1.5;
+      margin-bottom: 14px;
     `;
     this.popupEl.appendChild(this.infoEl);
 
@@ -64,13 +64,13 @@ export class InteractPopup {
     this.closeBtn.innerHTML = 'Close <span style="opacity: 0.5; margin-left: 8px;">[E]</span>';
     this.closeBtn.style.cssText = `
       width: 100%;
-      padding: 10px 16px;
+      padding: 8px 12px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 8px;
+      border-radius: 6px;
       color: #fff;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
+      font-size: 11px;
       cursor: pointer;
       transition: background 0.15s ease;
     `;
@@ -83,7 +83,7 @@ export class InteractPopup {
     this.closeBtn.onclick = () => this.close();
     this.popupEl.appendChild(this.closeBtn);
 
-    document.body.appendChild(this.popupEl);
+    (document.getElementById('gb-screen') || document.body).appendChild(this.popupEl);
   }
 
   _getObjectName(type) {

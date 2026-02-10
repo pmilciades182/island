@@ -146,7 +146,8 @@ export class PlayerController {
       ? (this.gamepad.buttons[6]?.value > 0.3 || this.gamepad.A)
       : false;
 
-    this.sprinting = (this.shiftKey.isDown || padSprint) && stamina > 0 && !staminaCooldown;
+    const virtualSprint = window.virtualInput && window.virtualInput.buttonB;
+    this.sprinting = (this.shiftKey.isDown || padSprint || virtualSprint) && stamina > 0 && !staminaCooldown;
     let currentSpeed = this.sprinting ? this.speed * 1.8 : this.speed;
 
     // Terrain speed modifier at current position
@@ -194,6 +195,15 @@ export class PlayerController {
       if (Math.abs(lx) > this._padDeadzone || Math.abs(ly) > this._padDeadzone) {
         vx = lx * currentSpeed;
         vy = ly * currentSpeed;
+      }
+    }
+
+    // Virtual joystick (touch/mobile)
+    const vi = window.virtualInput;
+    if (vi && vi.joystickActive) {
+      if (Math.abs(vi.joystickX) > 0.15 || Math.abs(vi.joystickY) > 0.15) {
+        vx = vi.joystickX * currentSpeed;
+        vy = vi.joystickY * currentSpeed;
       }
     }
 

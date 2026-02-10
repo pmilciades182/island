@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Island Survival</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,22 +18,274 @@
     }
 
     body {
-      background: #0a0a0a;
+      background: #1a1a2e;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      height: 100dvh;
       overflow: hidden;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
-    canvas {
-      border-radius: 12px;
+    /* ── GAME BOY SHELL ── */
+    #gameboy {
+      width: min(95vw, 420px);
+      max-height: 100vh;
+      max-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: linear-gradient(160deg, #c8c4be 0%, #b8b4ae 40%, #a8a49e 100%);
+      border-radius: 12px 12px 50px 12px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.4),
+        inset 0 -2px 4px rgba(0,0,0,0.1),
+        0 8px 32px rgba(0,0,0,0.6),
+        0 2px 8px rgba(0,0,0,0.3);
+      padding: 12px 12px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Top notch strip */
+    #gb-top-strip {
+      width: 100%;
+      display: flex;
+      justify-content: flex-start;
+      padding: 0 8px 6px;
+    }
+    #gb-top-strip .gb-notch {
+      width: 40px;
+      height: 4px;
+      background: linear-gradient(90deg, #8a868a, #9a969a, #8a868a);
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* Screen bezel */
+    #gb-screen-bezel {
+      width: 100%;
+      background: linear-gradient(145deg, #45435e, #3a384f);
+      border-radius: 10px;
+      padding: 10px 10px 8px;
+      box-shadow:
+        inset 0 2px 6px rgba(0,0,0,0.4),
+        0 1px 0 rgba(255,255,255,0.15);
+    }
+
+    #gb-screen-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 4px 6px;
+    }
+    .gb-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #d32f2f;
+      box-shadow: 0 0 4px #d32f2f, inset 0 -1px 1px rgba(0,0,0,0.3);
+    }
+    .gb-power-text {
+      font-family: 'Inter', sans-serif;
+      font-size: 7px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* THE SCREEN — Phaser canvas lives here */
+    #gb-screen {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #0d0d0d;
+      position: relative;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    }
+    #gb-screen canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
-      will-change: transform;
+      touch-action: none;
     }
 
+    #gb-screen-brand {
+      text-align: center;
+      padding: 5px 0 0;
+      font-family: 'Rubik', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      font-style: italic;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* ── CONTROLS AREA ── */
+    #gb-controls {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 12px 4px;
+      flex-shrink: 0;
+    }
+
+    /* JOYSTICK */
+    #gb-dpad-area {
+      flex: 0 0 auto;
+    }
+    #virtual-joystick {
+      width: 110px;
+      height: 110px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #joystick-base {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #3a3836, #2e2c2a);
+      box-shadow:
+        inset 0 2px 6px rgba(0,0,0,0.5),
+        0 1px 0 rgba(255,255,255,0.1);
+      position: absolute;
+    }
+    #joystick-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #5a5856, #4a4846);
+      box-shadow:
+        0 2px 8px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.15);
+      position: absolute;
+      transition: transform 0.05s ease-out;
+      z-index: 2;
+    }
+
+    /* A/B BUTTONS */
+    #gb-buttons-area {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 10px;
+      transform: rotate(-25deg);
+    }
+    .gb-action-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: none;
+      font-family: 'Rubik', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.25);
+      cursor: pointer;
+      position: relative;
+      background: linear-gradient(145deg, #8b1a3a, #6b1030);
+      box-shadow:
+        0 4px 8px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.12),
+        inset 0 -2px 4px rgba(0,0,0,0.2);
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .gb-action-btn:active {
+      box-shadow:
+        0 1px 2px rgba(0,0,0,0.4),
+        inset 0 2px 6px rgba(0,0,0,0.4);
+      transform: translateY(2px);
+    }
+    #btn-b {
+      margin-top: 20px;
+    }
+
+    /* Button labels */
+    .gb-btn-label {
+      font-family: 'Rubik', sans-serif;
+      font-size: 8px;
+      font-weight: 700;
+      color: #605e5a;
+      text-align: center;
+      margin-top: 2px;
+      transform: rotate(25deg);
+      letter-spacing: 1px;
+    }
+
+    /* ── BOTTOM AREA ── */
+    #gb-bottom {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 16px 0;
+      gap: 8px;
+    }
+
+    #gb-select-start {
+      display: flex;
+      gap: 16px;
+      transform: rotate(-25deg);
+    }
+    .gb-small-btn {
+      width: 48px;
+      height: 12px;
+      border-radius: 6px;
+      border: none;
+      background: linear-gradient(145deg, #6a6864, #5a5854);
+      box-shadow:
+        inset 0 1px 2px rgba(0,0,0,0.3),
+        0 1px 0 rgba(255,255,255,0.08);
+      font-family: 'Rubik', sans-serif;
+      font-size: 6px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #9a9894;
+      cursor: pointer;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .gb-small-btn:active {
+      transform: translateY(1px);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    #gb-brand-text {
+      font-family: 'Rubik', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      font-style: italic;
+      color: #6a6864;
+      letter-spacing: 1px;
+    }
+
+    /* Speaker grill */
+    #gb-speaker {
+      align-self: flex-end;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 4px 8px;
+    }
+    .gb-speaker-line {
+      width: 32px;
+      height: 2px;
+      border-radius: 1px;
+      background: #9a9690;
+      box-shadow: inset 0 1px 1px rgba(0,0,0,0.2);
+    }
+
+    /* ── DEBUG PANEL (desktop only) ── */
     #debug-panel {
       position: fixed;
       left: 0;
@@ -122,7 +374,7 @@
       justify-content: space-between;
       align-items: center;
     }
-     #debug-panel summary::-webkit-details-marker {
+    #debug-panel summary::-webkit-details-marker {
       display: none;
     }
     #debug-panel .log-content {
@@ -154,10 +406,18 @@
     }
     #debug-panel .warn { color: #facc15; }
     #debug-panel .err { color: #f87171; }
+
+    /* Hide debug on mobile */
+    @media (max-width: 600px) {
+      #debug-panel, #debug-toggle {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 
 <body>
+  <!-- Debug panel (desktop only) -->
   <div id="debug-panel" class="collapsed">
     <input type="text" id="debug-search" placeholder="Search logs...">
     <div id="debug-logs"></div>
@@ -170,6 +430,61 @@
       this.textContent = collapsed ? '{}' : 'X';
     });
   </script>
+
+  <!-- GAME BOY SHELL -->
+  <div id="gameboy">
+    <div id="gb-top-strip">
+      <div class="gb-notch"></div>
+    </div>
+
+    <div id="gb-screen-bezel">
+      <div id="gb-screen-label">
+        <span class="gb-dot"></span>
+        <span class="gb-power-text">Power</span>
+      </div>
+      <div id="gb-screen">
+        <!-- Phaser canvas inserted here via config.parent -->
+      </div>
+      <div id="gb-screen-brand">Island Survival</div>
+    </div>
+
+    <div id="gb-controls">
+      <div id="gb-dpad-area">
+        <div id="virtual-joystick">
+          <div id="joystick-base"></div>
+          <div id="joystick-thumb"></div>
+        </div>
+      </div>
+
+      <div id="gb-buttons-area">
+        <div>
+          <button id="btn-a" class="gb-action-btn">A</button>
+          <div class="gb-btn-label">ACT</div>
+        </div>
+        <div>
+          <button id="btn-b" class="gb-action-btn">B</button>
+          <div class="gb-btn-label">RUN</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="gb-bottom">
+      <div id="gb-select-start">
+        <button id="btn-select" class="gb-small-btn">SELECT</button>
+        <button id="btn-start" class="gb-small-btn">START</button>
+      </div>
+      <div id="gb-brand-text">ISLAND SURVIVAL</div>
+      <div id="gb-speaker">
+        <div class="gb-speaker-line"></div>
+        <div class="gb-speaker-line"></div>
+        <div class="gb-speaker-line"></div>
+        <div class="gb-speaker-line"></div>
+        <div class="gb-speaker-line"></div>
+        <div class="gb-speaker-line"></div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
   <script src="js/lib/noise.js"></script>
   <script type="module" src="js/world/WorldConfig.js"></script>
@@ -183,6 +498,7 @@
   <script type="module" src="js/world/ProximityManager.js"></script>
   <script type="module" src="js/world/TaskDistributor.js"></script>
   <script src="js/SaveManager.js"></script>
+  <script src="js/ui/VirtualControls.js"></script>
   <script src="js/scenes/MenuScene.js"></script>
   <script type="module" src="js/scenes/GameScene.js"></script>
   <script src="js/main.js"></script>

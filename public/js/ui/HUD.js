@@ -2,7 +2,7 @@ export class HUD {
   constructor(scene, saveData, callbacks) {
     this.scene = scene;
     this.callbacks = callbacks; // { onExit, onToggleCycle }
-    this.sidebarWidth = 300;
+    this.sidebarWidth = 200;
     this.uiVisible = false;
     this.isToggling = false;
 
@@ -45,8 +45,8 @@ export class HUD {
 
     // Header Info - Player Name
     const playerName = (saveData && (saveData.name || (saveData.player && saveData.player.name))) || 'PLAYER';
-    this.hudName = scene.add.text(32, 60, String(playerName).toUpperCase(), {
-      fontSize: '20px',
+    this.hudName = scene.add.text(16, 50, String(playerName).toUpperCase(), {
+      fontSize: '14px',
       fontFamily: '"Rubik", sans-serif',
       color: '#ffffff',
       fontStyle: '700'
@@ -54,8 +54,8 @@ export class HUD {
     this.hudContainer.add(this.hudName);
 
     // Time (Digital Clock style)
-    this.timeText = scene.add.text(this.sidebarWidth - 32, 64, '12:00', {
-      fontSize: '16px',
+    this.timeText = scene.add.text(this.sidebarWidth - 16, 54, '12:00', {
+      fontSize: '13px',
       fontFamily: '"JetBrains Mono", monospace',
       color: '#10b981',
       fontStyle: '500'
@@ -63,8 +63,8 @@ export class HUD {
     this.hudContainer.add(this.timeText);
 
     // Pause Cycle Button
-    const pauseBtn = scene.add.text(this.sidebarWidth - 90, 64, '\u23F8', {
-      fontSize: '16px', color: '#a1a1aa'
+    const pauseBtn = scene.add.text(this.sidebarWidth - 68, 54, '\u23F8', {
+      fontSize: '13px', color: '#a1a1aa'
     }).setInteractive({ useHandCursor: true });
 
     pauseBtn.on('pointerdown', () => {
@@ -79,17 +79,17 @@ export class HUD {
     // Divider
     const div1 = scene.add.graphics();
     div1.lineStyle(1, 0x3f3f46, 1);
-    div1.lineBetween(32, 96, this.sidebarWidth - 32, 96);
+    div1.lineBetween(16, 78, this.sidebarWidth - 16, 78);
     this.hudContainer.add(div1);
 
     // Stats Section
-    let y = 120;
+    let y = 92;
 
     // HP Bar label
-    this.hudContainer.add(scene.add.text(32, y, 'VITALS', {
-      fontSize: '11px', fontFamily: '"JetBrains Mono", monospace', color: '#9ca3af', fontStyle: '700'
+    this.hudContainer.add(scene.add.text(16, y, 'VITALS', {
+      fontSize: '9px', fontFamily: '"JetBrains Mono", monospace', color: '#9ca3af', fontStyle: '700'
     }));
-    y += 20;
+    y += 16;
 
     // Health
     this.healthBarBg = scene.add.graphics();
@@ -97,12 +97,12 @@ export class HUD {
     this.hudContainer.add(this.healthBarBg);
     this.hudContainer.add(this.healthBar);
 
-    this.healthText = scene.add.text(this.sidebarWidth - 32, y - 2, '', {
-      fontSize: '12px', fontFamily: '"JetBrains Mono", monospace', color: '#f87171'
+    this.healthText = scene.add.text(this.sidebarWidth - 16, y - 2, '', {
+      fontSize: '10px', fontFamily: '"JetBrains Mono", monospace', color: '#f87171'
     }).setOrigin(1, 0);
     this.hudContainer.add(this.healthText);
 
-    y += 36;
+    y += 28;
 
     // Stamina
     this.staminaBarBg = scene.add.graphics();
@@ -110,68 +110,68 @@ export class HUD {
     this.hudContainer.add(this.staminaBarBg);
     this.hudContainer.add(this.staminaBar);
 
-    this.staminaText = scene.add.text(this.sidebarWidth - 32, y - 2, '', {
-      fontSize: '12px', fontFamily: '"JetBrains Mono", monospace', color: '#60a5fa'
+    this.staminaText = scene.add.text(this.sidebarWidth - 16, y - 2, '', {
+      fontSize: '10px', fontFamily: '"JetBrains Mono", monospace', color: '#60a5fa'
     }).setOrigin(1, 0);
     this.hudContainer.add(this.staminaText);
 
-    y += 48;
+    y += 36;
 
     // Attributes Panel
     const attrBg = scene.add.graphics();
     attrBg.fillStyle(0x27272a, 1);
-    attrBg.fillRoundedRect(32, y, this.sidebarWidth - 64, 90, 8);
+    attrBg.fillRoundedRect(16, y, this.sidebarWidth - 32, 72, 6);
     this.hudContainer.add(attrBg);
 
-    this.attrText = scene.add.text(44, y + 12, '', {
-      fontSize: '12px',
+    this.attrText = scene.add.text(26, y + 8, '', {
+      fontSize: '10px',
       fontFamily: '"JetBrains Mono", monospace',
       color: '#d4d4d8',
-      lineSpacing: 8
+      lineSpacing: 6
     });
     this.hudContainer.add(this.attrText);
 
-    y += 110;
+    y += 86;
 
     // Inventory Section
-    this.hudContainer.add(scene.add.text(32, y, 'INVENTORY', {
-      fontSize: '11px', fontFamily: '"JetBrains Mono", monospace', color: '#9ca3af', fontStyle: '700'
+    this.hudContainer.add(scene.add.text(16, y, 'INVENTORY', {
+      fontSize: '9px', fontFamily: '"JetBrains Mono", monospace', color: '#9ca3af', fontStyle: '700'
     }));
-    y += 24;
+    y += 18;
 
-    this.invText = scene.add.text(32, y, '', {
-      fontSize: '13px',
+    this.invText = scene.add.text(16, y, '', {
+      fontSize: '11px',
       fontFamily: '"Rubik", sans-serif',
       color: '#f4f4f5',
-      lineSpacing: 6,
-      wordWrap: { width: this.sidebarWidth - 64 }
+      lineSpacing: 4,
+      wordWrap: { width: this.sidebarWidth - 32 }
     });
     this.hudContainer.add(this.invText);
 
     // Exit Button
-    this._createExitButton(32, H - 80);
+    this._createExitButton(16, H - 60);
 
     // Floating Toggle Button (Visible when Sidebar hidden) — starts visible
-    this.toggleBtnContainer = scene.add.container(20, 20).setScrollFactor(0).setDepth(500000).setVisible(true);
+    this.toggleBtnContainer = scene.add.container(10, 10).setScrollFactor(0).setDepth(500000).setVisible(true);
 
     const tBg = scene.add.graphics();
     tBg.fillStyle(0x18181b, 0.85);
     tBg.lineStyle(1, 0x3f3f46, 1);
-    tBg.fillRoundedRect(0, 0, 56, 36, 8);
-    tBg.strokeRoundedRect(0, 0, 56, 36, 8);
+    tBg.fillRoundedRect(0, 0, 44, 28, 6);
+    tBg.strokeRoundedRect(0, 0, 44, 28, 6);
     this.toggleBtnContainer.add(tBg);
 
-    const tLabel = scene.add.text(28, 11, 'MENU', {
-      fontFamily: '"Rubik", sans-serif', fontSize: '11px', color: '#ffffff', fontStyle: '700'
+    const tLabel = scene.add.text(22, 9, 'MENU', {
+      fontFamily: '"Rubik", sans-serif', fontSize: '9px', color: '#ffffff', fontStyle: '700'
     }).setOrigin(0.5);
     this.toggleBtnContainer.add(tLabel);
 
-    const tKey = scene.add.text(28, 26, '[M]', {
-      fontFamily: '"JetBrains Mono", monospace', fontSize: '9px', color: '#71717a'
+    const tKey = scene.add.text(22, 21, '[M]', {
+      fontFamily: '"JetBrains Mono", monospace', fontSize: '7px', color: '#71717a'
     }).setOrigin(0.5);
     this.toggleBtnContainer.add(tKey);
 
-    const tZone = scene.add.zone(28, 18, 56, 36).setInteractive({ useHandCursor: true });
+    const tZone = scene.add.zone(22, 14, 44, 28).setInteractive({ useHandCursor: true });
     tZone.on('pointerdown', () => this.toggle());
     this.toggleBtnContainer.add(tZone);
 
@@ -186,11 +186,11 @@ export class HUD {
     this.floatingBarsContainer = scene.add.container(0, 0).setScrollFactor(0).setDepth(500001);
 
     // ── Diablo-style bottom panel ──
-    const panelW = 320;
-    const panelH = 58;
+    const panelW = Math.min(280, Math.floor(W * 0.6));
+    const panelH = 48;
     const panelX = (W - panelW) / 2;
     const panelY = H - panelH - 6;
-    const orbR = 24; // orb radius
+    const orbR = 18; // orb radius
 
     // Dark panel background
     const panelBg = scene.add.graphics();
@@ -201,8 +201,8 @@ export class HUD {
     this.floatingBarsContainer.add(panelBg);
 
     // Orb positions
-    const hpOrbX = panelX + 38;
-    const stOrbX = panelX + panelW - 38;
+    const hpOrbX = panelX + 30;
+    const stOrbX = panelX + panelW - 30;
     const orbCY = panelY + panelH / 2;
 
     // ── HP Orb (left) ──
@@ -219,12 +219,12 @@ export class HUD {
     this.floatingBarsContainer.add(this._hpOrbRing);
 
     this._hpText = scene.add.text(hpOrbX, orbCY, '', {
-      fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#ffffff', fontStyle: '700'
+      fontFamily: '"JetBrains Mono", monospace', fontSize: '9px', color: '#ffffff', fontStyle: '700'
     }).setOrigin(0.5);
     this.floatingBarsContainer.add(this._hpText);
 
-    const hpLabel = scene.add.text(hpOrbX, panelY - 6, 'HP', {
-      fontFamily: '"JetBrains Mono", monospace', fontSize: '8px', color: '#f87171', fontStyle: '700'
+    const hpLabel = scene.add.text(hpOrbX, panelY - 4, 'HP', {
+      fontFamily: '"JetBrains Mono", monospace', fontSize: '7px', color: '#f87171', fontStyle: '700'
     }).setOrigin(0.5);
     this.floatingBarsContainer.add(hpLabel);
 
@@ -242,12 +242,12 @@ export class HUD {
     this.floatingBarsContainer.add(this._stOrbRing);
 
     this._stText = scene.add.text(stOrbX, orbCY, '', {
-      fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#ffffff', fontStyle: '700'
+      fontFamily: '"JetBrains Mono", monospace', fontSize: '9px', color: '#ffffff', fontStyle: '700'
     }).setOrigin(0.5);
     this.floatingBarsContainer.add(this._stText);
 
-    const stLabel = scene.add.text(stOrbX, panelY - 6, 'ST', {
-      fontFamily: '"JetBrains Mono", monospace', fontSize: '8px', color: '#60a5fa', fontStyle: '700'
+    const stLabel = scene.add.text(stOrbX, panelY - 4, 'ST', {
+      fontFamily: '"JetBrains Mono", monospace', fontSize: '7px', color: '#60a5fa', fontStyle: '700'
     }).setOrigin(0.5);
     this.floatingBarsContainer.add(stLabel);
 
@@ -275,8 +275,8 @@ export class HUD {
 
   _createExitButton(x, y) {
     const scene = this.scene;
-    const btnW = this.sidebarWidth - 64;
-    const btnH = 40;
+    const btnW = this.sidebarWidth - 32;
+    const btnH = 34;
 
     const container = scene.add.container(x, y);
     this.hudContainer.add(container);
@@ -288,8 +288,8 @@ export class HUD {
     bg.strokeRoundedRect(0, 0, btnW, btnH, 6);
     container.add(bg);
 
-    const txt = scene.add.text(btnW / 2, btnH / 2, 'EXIT WORLD [ESC]', {
-      fontSize: '13px', fontFamily: '"Rubik", sans-serif', color: '#fecaca', fontStyle: '600', letterSpacing: 1
+    const txt = scene.add.text(btnW / 2, btnH / 2, 'EXIT [ESC]', {
+      fontSize: '11px', fontFamily: '"Rubik", sans-serif', color: '#fecaca', fontStyle: '600', letterSpacing: 1
     }).setOrigin(0.5);
     container.add(txt);
 
@@ -350,12 +350,12 @@ export class HUD {
 
   update(playerState) {
     const { health, maxHealth, stamina, maxStamina, attributes, inventory } = playerState;
-    const startX = 32;
-    const barW = this.sidebarWidth - 64;
-    const barH = 8;
+    const startX = 16;
+    const barW = this.sidebarWidth - 32;
+    const barH = 6;
 
-    // HP - Y=140
-    let hpY = 140;
+    // HP
+    let hpY = 108;
 
     this.healthText.setOrigin(1, 1);
     this.healthText.setPosition(startX + barW, hpY - 4);
@@ -374,7 +374,7 @@ export class HUD {
     }
 
     // Stamina
-    const stY = hpY + 36;
+    const stY = hpY + 28;
 
     this.staminaText.setOrigin(1, 1);
     this.staminaText.setPosition(startX + barW, stY - 4);

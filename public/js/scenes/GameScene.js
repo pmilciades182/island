@@ -207,6 +207,7 @@ class GameScene extends Phaser.Scene {
 
     // Gamepad X button for interaction (debounce flag)
     this._padInteractHeld = false;
+    this._virtualInteractHeld = false;
 
 
     // ... (auto-save timer remains the same)
@@ -243,6 +244,17 @@ class GameScene extends Phaser.Scene {
         this._handleInteract();
       } else if (!xPressed) {
         this._padInteractHeld = false;
+      }
+    }
+
+    // Virtual A button → interact (with debounce)
+    const vi = window.virtualInput;
+    if (vi) {
+      if (vi.buttonA && !this._virtualInteractHeld) {
+        this._virtualInteractHeld = true;
+        this._handleInteract();
+      } else if (!vi.buttonA) {
+        this._virtualInteractHeld = false;
       }
     }
 

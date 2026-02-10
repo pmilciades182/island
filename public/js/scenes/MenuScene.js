@@ -10,19 +10,23 @@ class MenuScene extends Phaser.Scene {
     this.saveWidgets = [];
     this.modal = null;
 
+    const pad = 20;
+    this.contentW = this.W - pad * 2;
+    this.padX = pad;
+
     // Fondo
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x080e1a, 0x080e1a, 0x0d0d0d, 0x0d0d0d, 1);
     bg.fillRect(0, 0, this.W, this.H);
 
-    // Partículas
-    for (let i = 0; i < 40; i++) {
+    // Particulas
+    for (let i = 0; i < 20; i++) {
       const dot = this.add.circle(
         Phaser.Math.Between(0, this.W), Phaser.Math.Between(0, this.H),
         Phaser.Math.Between(1, 2), 0xffffff, Phaser.Math.FloatBetween(0.02, 0.08)
       );
       this.tweens.add({
-        targets: dot, y: dot.y - Phaser.Math.Between(20, 80), alpha: 0,
+        targets: dot, y: dot.y - Phaser.Math.Between(20, 60), alpha: 0,
         duration: Phaser.Math.Between(4000, 8000), repeat: -1, yoyo: true
       });
     }
@@ -35,43 +39,42 @@ class MenuScene extends Phaser.Scene {
     const cx = this.W / 2;
 
     // Logo icon
-    this.add.text(cx, 30, '\u{1F3DD}', { fontSize: '36px' }).setOrigin(0.5);
+    this.add.text(cx, 22, '\u{1F3DD}', { fontSize: '28px' }).setOrigin(0.5);
 
-    // Título
-    this.add.text(cx, 68, 'ISLAND', {
-      fontSize: '44px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '700'
+    // Titulo
+    this.add.text(cx, 52, 'ISLAND', {
+      fontSize: '32px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '700'
     }).setOrigin(0.5);
-    this.add.text(cx, 108, 'S U R V I V A L', {
-      fontSize: '14px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.3)', fontStyle: '400'
+    this.add.text(cx, 80, 'S U R V I V A L', {
+      fontSize: '11px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.3)', fontStyle: '400'
     }).setOrigin(0.5);
 
     // Separador
     const line = this.add.graphics();
     line.fillStyle(0xffffff, 0.05);
-    line.fillRect(cx - 240, 130, 480, 1);
+    line.fillRect(this.padX, 98, this.contentW, 1);
 
-    // Botón New Game
-    this.createMainButton(cx, 168, 220, 48, '\u{2795}  New Game', 0x2563eb, () => this.onNewGame());
+    // Boton New Game
+    this.createMainButton(cx, 130, 180, 40, '\u{2795}  New Game', 0x2563eb, () => this.onNewGame());
 
     // Saved games header
-    this.listLabel = this.add.text(cx - 280, 212, '\u{1F4BE}  SAVED GAMES', {
-      fontSize: '11px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.3)',
+    this.listLabel = this.add.text(this.padX, 166, '\u{1F4BE}  SAVED GAMES', {
+      fontSize: '10px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.3)',
       fontStyle: '600'
     }).setOrigin(0, 0.5);
 
     this.listCountBadge = null;
-    this.listY = 240;
+    this.listY = 186;
   }
 
-  // ── Main CTA button ──
+  // -- Main CTA button --
   createMainButton(x, y, w, h, label, color, callback) {
     const c = this.add.container(x, y);
     const r = h / 2;
 
-    // Shadow
     const shadow = this.add.graphics();
     shadow.fillStyle(color, 0.25);
-    shadow.fillRoundedRect(-w / 2 + 4, -h / 2 + 6, w, h, r);
+    shadow.fillRoundedRect(-w / 2 + 3, -h / 2 + 4, w, h, r);
     c.add(shadow);
 
     const bg = this.add.graphics();
@@ -80,7 +83,7 @@ class MenuScene extends Phaser.Scene {
     c.add(bg);
 
     const txt = this.add.text(0, 0, label, {
-      fontSize: '15px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '600'
+      fontSize: '13px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '600'
     }).setOrigin(0.5);
     c.add(txt);
 
@@ -100,9 +103,9 @@ class MenuScene extends Phaser.Scene {
     return c;
   }
 
-  // ── Icon button (circle) ──
+  // -- Icon button (circle) --
   createIconBtn(x, y, icon, bgColor, tooltip, callback) {
-    const size = 32;
+    const size = 28;
     const c = this.add.container(x, y);
 
     const bg = this.add.graphics();
@@ -111,14 +114,13 @@ class MenuScene extends Phaser.Scene {
     c.add(bg);
 
     const ico = this.add.text(0, 0, icon, {
-      fontSize: '14px'
+      fontSize: '12px'
     }).setOrigin(0.5);
     c.add(ico);
 
-    // Tooltip
-    const tip = this.add.text(0, -24, tooltip, {
-      fontSize: '9px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.7)',
-      fontStyle: '500', backgroundColor: 'rgba(0,0,0,0.8)', padding: { x: 6, y: 3 }
+    const tip = this.add.text(0, -20, tooltip, {
+      fontSize: '8px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.7)',
+      fontStyle: '500', backgroundColor: 'rgba(0,0,0,0.8)', padding: { x: 4, y: 2 }
     }).setOrigin(0.5).setAlpha(0);
     c.add(tip);
 
@@ -143,7 +145,7 @@ class MenuScene extends Phaser.Scene {
     return c;
   }
 
-  // ── Glass panel helper ──
+  // -- Glass panel helper --
   drawGlass(gfx, x, y, w, h, r) {
     gfx.fillStyle(0xffffff, 0.035);
     gfx.fillRoundedRect(x, y, w, h, r);
@@ -163,37 +165,38 @@ class MenuScene extends Phaser.Scene {
     const list = SaveManager.list();
     this.clearSaveList();
     const cx = this.W / 2;
+    const cardW = this.contentW;
+    const cardX = this.padX;
 
     if (list.length === 0) {
       const widgets = [];
       const emptyCard = this.add.graphics();
-      this.drawGlass(emptyCard, cx - 280, this.listY, 560, 80, 16);
+      this.drawGlass(emptyCard, cardX, this.listY, cardW, 70, 12);
       widgets.push(emptyCard);
 
-      widgets.push(this.add.text(cx, this.listY + 28, '\u{1F30A}', { fontSize: '24px' }).setOrigin(0.5));
-      widgets.push(this.add.text(cx, this.listY + 55, 'No saved games yet. Start a new adventure!', {
-        fontSize: '12px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.35)', fontStyle: '400'
+      widgets.push(this.add.text(cx, this.listY + 24, '\u{1F30A}', { fontSize: '20px' }).setOrigin(0.5));
+      widgets.push(this.add.text(cx, this.listY + 48, 'No saved games yet. Start a new adventure!', {
+        fontSize: '10px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.35)', fontStyle: '400',
+        wordWrap: { width: cardW - 40 }, align: 'center'
       }).setOrigin(0.5));
       this.saveWidgets.push(widgets);
       return;
     }
 
     // Badge count
-    this.listCountBadge = this.add.text(this.listLabel.x + this.listLabel.width + 10, 212, `${list.length}`, {
-      fontSize: '10px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '600',
-      backgroundColor: 'rgba(37,99,235,0.6)', padding: { x: 7, y: 2 }
+    this.listCountBadge = this.add.text(this.listLabel.x + this.listLabel.width + 8, 166, `${list.length}`, {
+      fontSize: '9px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '600',
+      backgroundColor: 'rgba(37,99,235,0.6)', padding: { x: 6, y: 2 }
     }).setOrigin(0, 0.5);
 
     list.forEach((save, i) => {
-      const y = this.listY + i * 72;
-      const cardW = 560;
-      const cardH = 60;
-      const cardX = cx - cardW / 2;
+      const y = this.listY + i * 58;
+      const cardH = 48;
       const widgets = [];
 
       // Card
       const card = this.add.graphics();
-      this.drawGlass(card, cardX, y, cardW, cardH, 14);
+      this.drawGlass(card, cardX, y, cardW, cardH, 10);
       widgets.push(card);
 
       // Hover zone for card
@@ -201,39 +204,39 @@ class MenuScene extends Phaser.Scene {
       cardZone.on('pointerover', () => {
         card.clear();
         card.fillStyle(0xffffff, 0.06);
-        card.fillRoundedRect(cardX, y, cardW, cardH, 14);
+        card.fillRoundedRect(cardX, y, cardW, cardH, 10);
         card.lineStyle(1, 0xffffff, 0.1);
-        card.strokeRoundedRect(cardX, y, cardW, cardH, 14);
+        card.strokeRoundedRect(cardX, y, cardW, cardH, 10);
       });
       cardZone.on('pointerout', () => {
         card.clear();
-        this.drawGlass(card, cardX, y, cardW, cardH, 14);
+        this.drawGlass(card, cardX, y, cardW, cardH, 10);
       });
       cardZone.on('pointerdown', () => this.onLoad(save.id));
       widgets.push(cardZone);
 
       // Play icon
-      widgets.push(this.add.text(cardX + 20, y + cardH / 2, '\u{25B6}', {
-        fontSize: '18px', color: 'rgba(52,211,153,0.8)'
+      widgets.push(this.add.text(cardX + 14, y + cardH / 2, '\u{25B6}', {
+        fontSize: '14px', color: 'rgba(52,211,153,0.8)'
       }).setOrigin(0, 0.5));
 
       // Nombre
-      widgets.push(this.add.text(cardX + 48, y + 16, save.name, {
-        fontSize: '14px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '600'
+      widgets.push(this.add.text(cardX + 36, y + 14, save.name, {
+        fontSize: '12px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '600'
       }).setOrigin(0, 0.5));
 
       // Fecha con icono reloj
       const timeAgo = this.getTimeAgo(save.updatedAt);
-      widgets.push(this.add.text(cardX + 48, y + 38, `\u{1F551}  ${timeAgo}`, {
-        fontSize: '10px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.3)', fontStyle: '400'
+      widgets.push(this.add.text(cardX + 36, y + 32, `\u{1F551}  ${timeAgo}`, {
+        fontSize: '9px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.3)', fontStyle: '400'
       }).setOrigin(0, 0.5));
 
       // Action buttons (derecha)
       const btnY = y + cardH / 2;
-      const rightEdge = cardX + cardW - 18;
+      const rightEdge = cardX + cardW - 14;
       widgets.push(this.createIconBtn(rightEdge, btnY, '\u{1F5D1}', 0xf87171, 'Delete', () => this.onDelete(save.id)));
-      widgets.push(this.createIconBtn(rightEdge - 40, btnY, '\u{270F}', 0xfbbf24, 'Rename', () => this.onRename(save.id, save.name)));
-      widgets.push(this.createIconBtn(rightEdge - 80, btnY, '\u{1F4CB}', 0x60a5fa, 'Clone', () => this.onClone(save.id)));
+      widgets.push(this.createIconBtn(rightEdge - 34, btnY, '\u{270F}', 0xfbbf24, 'Rename', () => this.onRename(save.id, save.name)));
+      widgets.push(this.createIconBtn(rightEdge - 68, btnY, '\u{1F4CB}', 0x60a5fa, 'Clone', () => this.onClone(save.id)));
 
       this.saveWidgets.push(widgets);
     });
@@ -251,7 +254,7 @@ class MenuScene extends Phaser.Scene {
   }
 
   // ══════════════════════════════════════
-  //  MODAL SYSTEM (reemplaza alert/prompt/confirm)
+  //  MODAL SYSTEM
   // ══════════════════════════════════════
 
   showModal(config) {
@@ -259,8 +262,8 @@ class MenuScene extends Phaser.Scene {
 
     const cx = this.W / 2;
     const cy = this.H / 2;
-    const mW = config.width || 360;
-    const mH = config.height || 220;
+    const mW = Math.min(config.width || 320, this.W - 40);
+    const mH = Math.min(config.height || 200, this.H - 40);
     const items = [];
 
     // Overlay
@@ -277,26 +280,26 @@ class MenuScene extends Phaser.Scene {
     // Panel
     const panel = this.add.graphics();
     panel.fillStyle(0x161b26, 1);
-    panel.fillRoundedRect(-mW / 2, -mH / 2, mW, mH, 20);
+    panel.fillRoundedRect(-mW / 2, -mH / 2, mW, mH, 16);
     panel.lineStyle(1, 0xffffff, 0.08);
-    panel.strokeRoundedRect(-mW / 2, -mH / 2, mW, mH, 20);
+    panel.strokeRoundedRect(-mW / 2, -mH / 2, mW, mH, 16);
     container.add(panel);
 
     // Icon
     if (config.icon) {
-      container.add(this.add.text(0, -mH / 2 + 32, config.icon, { fontSize: '28px' }).setOrigin(0.5));
+      container.add(this.add.text(0, -mH / 2 + 26, config.icon, { fontSize: '22px' }).setOrigin(0.5));
     }
 
     // Title
-    container.add(this.add.text(0, -mH / 2 + 65, config.title, {
-      fontSize: '16px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '700'
+    container.add(this.add.text(0, -mH / 2 + 52, config.title, {
+      fontSize: '14px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '700'
     }).setOrigin(0.5));
 
     // Subtitle
     if (config.subtitle) {
-      container.add(this.add.text(0, -mH / 2 + 88, config.subtitle, {
-        fontSize: '12px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.4)', fontStyle: '400',
-        wordWrap: { width: mW - 60 }, align: 'center'
+      container.add(this.add.text(0, -mH / 2 + 72, config.subtitle, {
+        fontSize: '10px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.4)', fontStyle: '400',
+        wordWrap: { width: mW - 40 }, align: 'center'
       }).setOrigin(0.5));
     }
 
@@ -306,27 +309,25 @@ class MenuScene extends Phaser.Scene {
     let cursor = null;
 
     if (config.input) {
-      // Input background
+      const inputW = mW - 60;
       const inputBg = this.add.graphics();
       inputBg.fillStyle(0x000000, 0.4);
-      inputBg.fillRoundedRect(-130, -10, 260, 36, 10);
+      inputBg.fillRoundedRect(-inputW / 2, -10, inputW, 32, 8);
       inputBg.lineStyle(1, 0x2563eb, 0.5);
-      inputBg.strokeRoundedRect(-130, -10, 260, 36, 10);
+      inputBg.strokeRoundedRect(-inputW / 2, -10, inputW, 32, 8);
       container.add(inputBg);
 
-      inputText = this.add.text(-120, 8, inputValue, {
-        fontSize: '14px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '500'
+      inputText = this.add.text(-inputW / 2 + 10, 6, inputValue, {
+        fontSize: '12px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '500'
       }).setOrigin(0, 0.5);
       container.add(inputText);
 
-      // Cursor blink
-      cursor = this.add.text(inputText.x + inputText.width + 1, 8, '|', {
-        fontSize: '14px', fontFamily: 'Inter, sans-serif', color: 'rgba(37,99,235,0.8)'
+      cursor = this.add.text(inputText.x + inputText.width + 1, 6, '|', {
+        fontSize: '12px', fontFamily: 'Inter, sans-serif', color: 'rgba(37,99,235,0.8)'
       }).setOrigin(0, 0.5);
       container.add(cursor);
       this.tweens.add({ targets: cursor, alpha: 0, duration: 500, repeat: -1, yoyo: true });
 
-      // Keyboard input
       this.input.keyboard.on('keydown', (e) => {
         if (!this.modal) return;
         if (e.key === 'Backspace') {
@@ -338,7 +339,7 @@ class MenuScene extends Phaser.Scene {
         } else if (e.key === 'Escape') {
           this.destroyModal();
           return;
-        } else if (e.key.length === 1 && inputValue.length < 24) {
+        } else if (e.key.length === 1 && inputValue.length < 20) {
           inputValue += e.key;
         }
         inputText.setText(inputValue);
@@ -347,18 +348,18 @@ class MenuScene extends Phaser.Scene {
     }
 
     // Buttons
-    const btnY = mH / 2 - 42;
-    const btnGap = config.input ? 8 : 8;
+    const btnY = mH / 2 - 36;
+    const btnGap = 8;
 
     if (config.buttons) {
       const totalBtns = config.buttons.length;
-      const btnW = totalBtns === 1 ? 160 : 130;
+      const btnW = totalBtns === 1 ? 140 : 110;
       const totalW = totalBtns * btnW + (totalBtns - 1) * btnGap;
       let startX = -totalW / 2 + btnW / 2;
 
       config.buttons.forEach((btn, i) => {
         const bx = startX + i * (btnW + btnGap);
-        const bh = 38;
+        const bh = 34;
         const r = bh / 2;
 
         const btnBg = this.add.graphics();
@@ -376,7 +377,7 @@ class MenuScene extends Phaser.Scene {
 
         const textColor = btn.primary ? '#ffffff' : 'rgba(255,255,255,0.7)';
         const btnLabel = this.add.text(0, 0, btn.label, {
-          fontSize: '13px', fontFamily: 'Inter, sans-serif', color: textColor, fontStyle: '600'
+          fontSize: '11px', fontFamily: 'Inter, sans-serif', color: textColor, fontStyle: '600'
         }).setOrigin(0.5);
         btnContainer.add(btnLabel);
 
@@ -435,8 +436,8 @@ class MenuScene extends Phaser.Scene {
       icon: '\u{1F4CB}',
       title: 'Clone Save',
       subtitle: 'Create an exact copy of this save game?',
-      width: 340,
-      height: 200,
+      width: 300,
+      height: 180,
       buttons: [
         { label: 'Cancel', primary: false, action: 'cancel' },
         { label: 'Clone', primary: true, color: 0x2563eb, action: 'confirm' }
@@ -455,8 +456,8 @@ class MenuScene extends Phaser.Scene {
       subtitle: 'Enter a new name for this save:',
       input: true,
       inputDefault: currentName,
-      width: 360,
-      height: 230,
+      width: 320,
+      height: 210,
       buttons: [
         { label: 'Cancel', primary: false, action: 'cancel' },
         { label: 'Rename', primary: true, color: 0xd97706, action: 'confirm' }
@@ -473,9 +474,9 @@ class MenuScene extends Phaser.Scene {
     this.showModal({
       icon: '\u{26A0}',
       title: 'Delete Save',
-      subtitle: 'This action cannot be undone. Are you sure you want to delete this save?',
-      width: 360,
-      height: 210,
+      subtitle: 'This action cannot be undone. Are you sure?',
+      width: 320,
+      height: 190,
       buttons: [
         { label: 'Cancel', primary: false, action: 'cancel' },
         { label: 'Delete', primary: true, color: 0xdc2626, action: 'confirm' }

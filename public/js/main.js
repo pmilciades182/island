@@ -1,13 +1,17 @@
 const config = {
-  type: Phaser.CANVAS, // TEST: force Canvas2D to rule out WebGL/ANGLE issue
-  width: 960,
-  height: 640,
+  type: Phaser.CANVAS,
+  width: 480,
+  height: 480,
   backgroundColor: '#0d0d0d',
   pixelArt: false,
   roundPixels: false,
   antialias: false,
   antialiasGL: false,
-  parent: document.body,
+  parent: 'gb-screen',
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH
+  },
   input: {
     gamepad: true
   },
@@ -18,10 +22,9 @@ const config = {
       debug: false
     }
   },
-  scene: [MenuScene] // GameScene will be added dynamically or logic changed
+  scene: [MenuScene]
 };
 
-// Wait for modules to load and define window.GameScene
 window.addEventListener('load', () => {
   config.scene = [MenuScene, window.GameScene];
   const game = new Phaser.Game(config);
@@ -34,22 +37,4 @@ window.addEventListener('load', () => {
       tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
     }
   });
-
-  // Fix sub-pixel canvas positioning that causes terrain shimmer.
-  // Flex centering can place the canvas at fractional pixels (e.g. 272.5).
-  // The browser then interpolates the entire canvas output, and scrolling
-  // content inside causes visible shimmer/shaking.
-  const fixCanvasPosition = () => {
-    const c = game.canvas;
-    const r = c.getBoundingClientRect();
-    const fracX = r.x - Math.round(r.x);
-    const fracY = r.y - Math.round(r.y);
-    if (fracX !== 0 || fracY !== 0) {
-      c.style.transform = `translate(${-fracX}px, ${-fracY}px)`;
-    } else {
-      c.style.transform = '';
-    }
-  };
-  requestAnimationFrame(fixCanvasPosition);
-  window.addEventListener('resize', () => requestAnimationFrame(fixCanvasPosition));
 });
