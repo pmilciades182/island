@@ -126,13 +126,13 @@ class VirtualControls {
     var touchId = null;
 
     el.addEventListener('touchstart', (e) => {
-      e.preventDefault();
+      // e.preventDefault(); // Removed to allow default touch behaviors
       touchId = e.changedTouches[0].identifier;
       window.virtualInput[inputKey] = true;
       if (navigator.vibrate) {
         navigator.vibrate(50); // Vibrate for 50ms
       }
-    }, { passive: false });
+    }, { passive: true }); // Changed to passive: true
 
     el.addEventListener('touchend', (e) => {
       for (var i = 0; i < e.changedTouches.length; i++) {
@@ -142,12 +142,12 @@ class VirtualControls {
           break;
         }
       }
-    }, { passive: false });
+    }, { passive: true }); // Changed to passive: true
 
     el.addEventListener('touchcancel', () => {
       window.virtualInput[inputKey] = false;
       touchId = null;
-    }, { passive: false });
+    }, { passive: true }); // Changed to passive: true
 
     // Mouse fallback
     el.addEventListener('mousedown', () => { window.virtualInput[inputKey] = true; });
