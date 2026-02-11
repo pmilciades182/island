@@ -191,13 +191,13 @@
       aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
       max-width: 200px; /* Max size for the grid */
       max-height: 200px; /* Max size for the grid */
-      --offset-from-center: 60px; /* Define offset for absolute positioning */
+      --offset-from-center: 30%; /* Define offset as a percentage for responsiveness */
     }
 
     .gb-button-wrapper {
-      position: absolute; /* Enable absolute positioning */
-      width: 70px; /* Take button size from here for positioning */
-      height: 70px; /* Take button size from here for positioning */
+      position: absolute;
+      width: 35%; /* Make button wrapper responsive */
+      height: 35%; /* Make button wrapper responsive */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -227,8 +227,8 @@
 
 
     .gb-action-btn {
-      width: 70px;
-      height: 70px;
+      width: 100%; /* Make button fill its responsive wrapper */
+      height: 100%; /* Make button fill its responsive wrapper */
       border-radius: 50%;
       border: none;
       font-family: 'Rubik', sans-serif;
