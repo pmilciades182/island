@@ -136,7 +136,7 @@ class VirtualControls {
       window.virtualInput[inputKey] = true;
       console.log(`virtualInput[${inputKey}] set to true:`, window.virtualInput[inputKey]);
       if (navigator.vibrate) {
-        navigator.vibrate(50); // Vibrate for 50ms
+        navigator.vibrate(150); // Vibrate for 150ms (increased duration)
         console.log(`Vibrating for ${elementId}`);
       } else {
         console.log(`Vibration not supported or not enabled for ${elementId}`);
