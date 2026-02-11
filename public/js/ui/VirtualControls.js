@@ -5,7 +5,9 @@ class VirtualControls {
       joystickY: 0,
       joystickActive: false,
       buttonA: false,
-      buttonB: false
+      buttonB: false,
+      buttonX: false,
+      buttonY: false
     };
 
     this._joystickRadius = 0;
@@ -113,6 +115,8 @@ class VirtualControls {
   _setupButtons() {
     this._setupButton('btn-a', 'buttonA');
     this._setupButton('btn-b', 'buttonB');
+    this._setupButton('btn-x', 'buttonX');
+    this._setupButton('btn-y', 'buttonY');
   }
 
   _setupButton(elementId, inputKey) {
@@ -125,6 +129,9 @@ class VirtualControls {
       e.preventDefault();
       touchId = e.changedTouches[0].identifier;
       window.virtualInput[inputKey] = true;
+      if (navigator.vibrate) {
+        navigator.vibrate(50); // Vibrate for 50ms
+      }
     }, { passive: false });
 
     el.addEventListener('touchend', (e) => {
