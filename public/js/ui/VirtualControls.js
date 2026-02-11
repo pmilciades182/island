@@ -64,6 +64,7 @@ class VirtualControls {
     // Touch events
     area.addEventListener('touchstart', (e) => {
       e.preventDefault();
+      console.log('Joystick touchstart');
       if (this._joystickActive) return;
       this._joystickActive = true;
       this._joystickTouchId = e.changedTouches[0].identifier;
@@ -73,6 +74,7 @@ class VirtualControls {
 
     area.addEventListener('touchmove', (e) => {
       e.preventDefault();
+      console.log('Joystick touchmove');
       if (!this._joystickActive) return;
       for (var i = 0; i < e.changedTouches.length; i++) {
         if (e.changedTouches[i].identifier === this._joystickTouchId) {
@@ -83,6 +85,7 @@ class VirtualControls {
     }, { passive: false });
 
     area.addEventListener('touchend', (e) => {
+      console.log('Joystick touchend');
       for (var i = 0; i < e.changedTouches.length; i++) {
         if (e.changedTouches[i].identifier === this._joystickTouchId) {
           handleEnd();
@@ -91,7 +94,7 @@ class VirtualControls {
       }
     }, { passive: false });
 
-    area.addEventListener('touchcancel', () => { handleEnd(); }, { passive: false });
+    area.addEventListener('touchcancel', () => { console.log('Joystick touchcancel'); handleEnd(); }, { passive: false });
 
     // Mouse fallback for desktop testing
     var mouseActive = false;
@@ -122,22 +125,30 @@ class VirtualControls {
   _setupButton(elementId, inputKey) {
     var el = document.getElementById(elementId);
     if (!el) return;
+    console.log(`Setting up button: ${elementId}`);
 
     var touchId = null;
 
     el.addEventListener('touchstart', (e) => {
       // e.preventDefault(); // Removed to allow default touch behaviors
+      console.log(`touchstart on ${elementId}`);
       touchId = e.changedTouches[0].identifier;
       window.virtualInput[inputKey] = true;
+      console.log(`virtualInput[${inputKey}] set to true:`, window.virtualInput[inputKey]);
       if (navigator.vibrate) {
         navigator.vibrate(50); // Vibrate for 50ms
+        console.log(`Vibrating for ${elementId}`);
+      } else {
+        console.log(`Vibration not supported or not enabled for ${elementId}`);
       }
     }, { passive: true }); // Changed to passive: true
 
     el.addEventListener('touchend', (e) => {
+      console.log(`touchend on ${elementId}`);
       for (var i = 0; i < e.changedTouches.length; i++) {
         if (e.changedTouches[i].identifier === touchId) {
           window.virtualInput[inputKey] = false;
+          console.log(`virtualInput[${inputKey}] set to false:`, window.virtualInput[inputKey]);
           touchId = null;
           break;
         }
@@ -145,7 +156,9 @@ class VirtualControls {
     }, { passive: true }); // Changed to passive: true
 
     el.addEventListener('touchcancel', () => {
+      console.log(`touchcancel on ${elementId}`);
       window.virtualInput[inputKey] = false;
+      console.log(`virtualInput[${inputKey}] set to false:`, window.virtualInput[inputKey]);
       touchId = null;
     }, { passive: true }); // Changed to passive: true
 
