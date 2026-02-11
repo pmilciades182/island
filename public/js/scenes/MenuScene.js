@@ -7,8 +7,6 @@ class MenuScene extends Phaser.Scene {
     this.W = this.cameras.main.width;
     this.H = this.cameras.main.height;
     this.cameras.main.fadeIn(500, 0, 0, 0);
-    this.saveWidgets = [];
-    this.modal = null;
 
     const pad = 20;
     this.contentW = this.W - pad * 2;
@@ -31,77 +29,68 @@ class MenuScene extends Phaser.Scene {
       });
     }
 
-    this.drawUI();
-    this.loadSaves();
+    // New Menu Structure
+    this.menuOptions = [
+      { text: 'New Game', action: () => this.onNewGame() },
+      { text: 'Load Game', action: () => console.log('Load Game selected') }, // Placeholder
+      { text: 'Options', action: () => console.log('Options selected') }, // Placeholder
+      { text: 'Exit', action: () => console.log('Exit selected') } // Placeholder
+    ];
+    this.menuItems = []; // To store Phaser Text objects for menu options
+    this.selectedMenuItemIndex = 0;
+    this.joystickCooldown = 0; // Cooldown for joystick navigation
+
+    this.drawMainMenu();
+    // this.loadSaves(); // Moved or refactored
   }
 
-  drawUI() {
+  drawMainMenu() {
     const cx = this.W / 2;
-
-    // Logo icon
-    this.add.text(cx, 22, '\u{1F3DD}', { fontSize: '28px' }).setOrigin(0.5);
+    const startY = this.H / 2 - 40; // Starting Y position for the menu items
+    const lineHeight = 30; // Vertical spacing between menu items
 
     // Titulo
-    this.add.text(cx, 52, 'ISLAND', {
-      fontSize: '32px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '700'
+    this.add.text(cx, startY - 80, 'ISLAND', {
+      fontSize: '48px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '700'
     }).setOrigin(0.5);
-    this.add.text(cx, 80, 'S U R V I V A L', {
-      fontSize: '11px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.3)', fontStyle: '400'
+    this.add.text(cx, startY - 40, 'S U R V I V A L', {
+      fontSize: '18px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.6)', fontStyle: '400'
     }).setOrigin(0.5);
 
-    // Separador
-    const line = this.add.graphics();
-    line.fillStyle(0xffffff, 0.05);
-    line.fillRect(this.padX, 98, this.contentW, 1);
+    // Menu Options
+    this.menuOptions.forEach((option, index) => {
+      const y = startY + (index * lineHeight);
+      const menuItem = this.add.text(cx, y, option.text, {
+        fontSize: '24px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '600'
+      }).setOrigin(0.5);
+      this.menuItems.push(menuItem);
+    });
 
-    // Boton New Game
-    this.createMainButton(cx, 130, 180, 40, '\u{2795}  New Game', 0x2563eb, () => this.onNewGame());
+    // Position indicator
+    this.indicator = this.add.text(0, 0, '>', {
+      fontSize: '24px', fontFamily: 'Inter, sans-serif', color: '#ffd700', fontStyle: '700' // Gold color
+    }).setOrigin(1, 0.5); // Origin at right to align to left of text
 
-    // Saved games header
-    this.listLabel = this.add.text(this.padX, 166, '\u{1F4BE}  SAVED GAMES', {
-      fontSize: '10px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.3)',
-      fontStyle: '600'
-    }).setOrigin(0, 0.5);
-
-    this.listCountBadge = null;
-    this.listY = 186;
+    this.updateMenuSelection(); // Initial update
   }
 
-  // -- Main CTA button --
-  createMainButton(x, y, w, h, label, color, callback) {
-    const c = this.add.container(x, y);
-    const r = h / 2;
-
-    const shadow = this.add.graphics();
-    shadow.fillStyle(color, 0.25);
-    shadow.fillRoundedRect(-w / 2 + 3, -h / 2 + 4, w, h, r);
-    c.add(shadow);
-
-    const bg = this.add.graphics();
-    bg.fillStyle(color, 1);
-    bg.fillRoundedRect(-w / 2, -h / 2, w, h, r);
-    c.add(bg);
-
-    const txt = this.add.text(0, 0, label, {
-      fontSize: '13px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '600'
-    }).setOrigin(0.5);
-    c.add(txt);
-
-    const zone = this.add.zone(0, 0, w, h).setInteractive({ useHandCursor: true });
-    c.add(zone);
-
-    zone.on('pointerover', () => {
-      this.tweens.add({ targets: c, scaleX: 1.05, scaleY: 1.05, duration: 150, ease: 'Back.easeOut' });
+  updateMenuSelection() {
+    this.menuItems.forEach((item, index) => {
+      if (index === this.selectedMenuItemIndex) {
+        item.setColor('#ffd700'); // Highlight selected item (gold)
+        item.setScale(1.1);
+        this.indicator.setPosition(item.x - item.width / 2 - 10, item.y); // Position indicator to the left
+        this.indicator.setVisible(true);
+      } else {
+        item.setColor('#ffffff'); // Default color for unselected items
+        item.setScale(1);
+      }
     });
-    zone.on('pointerout', () => {
-      this.tweens.add({ targets: c, scaleX: 1, scaleY: 1, duration: 150, ease: 'Sine.easeOut' });
-    });
-    zone.on('pointerdown', () => {
-      this.tweens.add({ targets: c, scaleX: 0.95, scaleY: 0.95, duration: 80, yoyo: true, ease: 'Sine.easeInOut' });
-      callback();
-    });
-    return c;
   }
+
+
+
+
 
   // -- Icon button (circle) --
   createIconBtn(x, y, icon, bgColor, tooltip, callback) {
@@ -418,6 +407,29 @@ class MenuScene extends Phaser.Scene {
     this.modal.items.forEach(obj => { if (obj && obj.destroy) obj.destroy(); });
     if (this.modal.container) this.modal.container.destroy();
     this.modal = null;
+  }
+
+  update(time, delta) {
+    // Joystick navigation
+    if (this.joystickCooldown > 0) {
+      this.joystickCooldown -= delta;
+    } else {
+      if (window.virtualInput.joystickY < -0.5) { // Joystick Up
+        this.selectedMenuItemIndex = (this.selectedMenuItemIndex - 1 + this.menuOptions.length) % this.menuOptions.length;
+        this.updateMenuSelection();
+        this.joystickCooldown = 200; // Cooldown in ms
+      } else if (window.virtualInput.joystickY > 0.5) { // Joystick Down
+        this.selectedMenuItemIndex = (this.selectedMenuItemIndex + 1) % this.menuOptions.length;
+        this.updateMenuSelection();
+        this.joystickCooldown = 200; // Cooldown in ms
+      }
+    }
+
+    // Button A for selection
+    if (window.virtualInput.buttonA && this.joystickCooldown <= 0) {
+      this.menuOptions[this.selectedMenuItemIndex].action();
+      this.joystickCooldown = 300; // Cooldown for action button
+    }
   }
 
   // ══════════════════════════════════════
