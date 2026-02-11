@@ -144,16 +144,16 @@
       flex: 0 0 auto;
     }
     #virtual-joystick {
-      width: 110px;
-      height: 110px;
+      width: 150px;
+      height: 150px;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     #joystick-base {
-      width: 100px;
-      height: 100px;
+      width: 140px;
+      height: 140px;
       border-radius: 50%;
       background: linear-gradient(145deg, #3a3836, #2e2c2a);
       box-shadow:
@@ -162,8 +162,8 @@
       position: absolute;
     }
     #joystick-thumb {
-      width: 44px;
-      height: 44px;
+      width: 60px;
+      height: 60px;
       border-radius: 50%;
       background: linear-gradient(145deg, #5a5856, #4a4846);
       box-shadow:
@@ -174,13 +174,43 @@
       z-index: 2;
     }
 
-    /* A/B BUTTONS */
+    /* A/B/X/Y BUTTONS */
     #gb-buttons-area {
-      flex: 0 0 auto;
+      flex: 1 1 auto; /* Allow to grow and shrink */
       display: flex;
-      gap: 10px;
-      transform: rotate(-25deg);
+      align-items: center;
+      justify-content: center;
     }
+
+    #gb-dpad-buttons {
+      display: grid;
+      grid-template-areas:
+        ". btn-y ."
+        "btn-x . btn-a"
+        ". btn-b .";
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: -5px; /* Negative gap to bring buttons even closer */
+      width: 100%; /* Make it responsive to its parent */
+      aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
+      max-width: 200px; /* Max size for the grid */
+      max-height: 200px; /* Max size for the grid */
+    }
+
+    .gb-button-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      /* Removed position: relative; */
+    }
+
+    #btn-y { grid-area: btn-y; }
+    #btn-x { grid-area: btn-x; }
+    #btn-a { grid-area: btn-a; }
+    #btn-b { grid-area: btn-b; }
+
+
     .gb-action-btn {
       width: 52px;
       height: 52px;
@@ -189,38 +219,38 @@
       font-family: 'Rubik', sans-serif;
       font-size: 16px;
       font-weight: 700;
-      color: rgba(255,255,255,0.25);
+      color: rgba(255,255,255,1); /* Changed color to solid white for better visibility */
       cursor: pointer;
-      position: relative;
+      /* removed position: relative; */
+      /* Default background, will be overridden by specific buttons */
       background: linear-gradient(145deg, #8b1a3a, #6b1030);
-      box-shadow:
-        0 4px 8px rgba(0,0,0,0.4),
-        inset 0 1px 0 rgba(255,255,255,0.12),
-        inset 0 -2px 4px rgba(0,0,0,0.2);
+      /* removed box-shadow */
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .gb-action-btn:active {
-      box-shadow:
-        0 1px 2px rgba(0,0,0,0.4),
-        inset 0 2px 6px rgba(0,0,0,0.4);
+      /* removed box-shadow */
       transform: translateY(2px);
     }
-    #btn-b {
-      margin-top: 20px;
+
+    /* Specific button colors */
+    #btn-a .gb-action-btn {
+      background: linear-gradient(145deg, #1a8b3a, #106b30); /* Green */
+    }
+    #btn-b .gb-action-btn {
+      background: linear-gradient(145deg, #8b1a3a, #6b1030); /* Red */
+    }
+    #btn-x .gb-action-btn {
+      background: linear-gradient(145deg, #1a3a8b, #10306b); /* Blue */
+    }
+    #btn-y .gb-action-btn {
+      background: linear-gradient(145deg, #8b8b1a, #6b6b10); /* Yellow */
     }
 
-    /* Button labels */
-    .gb-btn-label {
-      font-family: 'Rubik', sans-serif;
-      font-size: 8px;
-      font-weight: 700;
-      color: #605e5a;
-      text-align: center;
-      margin-top: 2px;
-      transform: rotate(25deg);
-      letter-spacing: 1px;
-    }
+
 
     /* ── BOTTOM AREA ── */
     #gb-bottom {
@@ -235,7 +265,10 @@
     #gb-select-start {
       display: flex;
       gap: 16px;
-      transform: rotate(-25deg);
+      transform: none; /* Remove rotation */
+      justify-content: center; /* Center horizontally */
+      width: 100%;
+      margin-top: 10px; /* Add some space from controls */
     }
     .gb-small-btn {
       width: 48px;
@@ -457,13 +490,19 @@
       </div>
 
       <div id="gb-buttons-area">
-        <div>
-          <button id="btn-a" class="gb-action-btn">A</button>
-          <div class="gb-btn-label">ACT</div>
-        </div>
-        <div>
-          <button id="btn-b" class="gb-action-btn">B</button>
-          <div class="gb-btn-label">RUN</div>
+        <div id="gb-dpad-buttons">
+          <div id="btn-y" class="gb-button-wrapper">
+            <button class="gb-action-btn">Y</button>
+          </div>
+          <div id="btn-x" class="gb-button-wrapper">
+            <button class="gb-action-btn">X</button>
+          </div>
+          <div id="btn-b" class="gb-button-wrapper">
+            <button class="gb-action-btn">B</button>
+          </div>
+          <div id="btn-a" class="gb-button-wrapper">
+            <button class="gb-action-btn">A</button>
+          </div>
         </div>
       </div>
     </div>
