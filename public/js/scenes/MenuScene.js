@@ -33,6 +33,7 @@ class MenuScene extends Phaser.Scene {
     this.menuOptions = [
       { text: 'New Game', action: () => this.onNewGame() },
       { text: 'Load Game', action: () => console.log('Load Game selected') }, // Placeholder
+      { text: 'Prototype', action: () => this.startPrototype() },
       { text: 'Options', action: () => console.log('Options selected') }, // Placeholder
       { text: 'Exit', action: () => console.log('Exit selected') } // Placeholder
     ];
@@ -505,6 +506,14 @@ class MenuScene extends Phaser.Scene {
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('GameScene', { saveId });
+    });
+  }
+
+  startPrototype() {
+    if (this.modal) return;
+    this.cameras.main.fadeOut(500, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('PrototypeScene');
     });
   }
 }

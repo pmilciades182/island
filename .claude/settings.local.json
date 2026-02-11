@@ -27,7 +27,9 @@
       "Bash(nautilus:*)",
       "Bash(gnome-shell:*)",
       "Bash(git remote add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git -C \"C:\\\\Users\\\\slot_tech\\\\cannabis\" log --oneline -10)",
+      "Bash(powershell:*)"
     ]
   }
 }
