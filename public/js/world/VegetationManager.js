@@ -12,10 +12,12 @@ import { createFlowerTextures } from '../objects/flower/textures.js';
 import { createAppleTextures } from '../objects/apple/textures.js';
 
 export class VegetationManager {
-  constructor(scene, vegetationData, seed = 0) {
+  constructor(scene, vegetationData, seed = 0, gridWidth = 8000, cellSize = 2.5) {
     this.scene = scene;
     this.vegetationData = vegetationData;
     this.rng = createRNG(seed + 2);
+    this.gridWidth = gridWidth;
+    this.cellSize = cellSize;
     this.CHUNK_SIZE = 500;
     this.spriteMap = new Map();
 
@@ -193,12 +195,12 @@ export class VegetationManager {
       }
     });
 
-    const playerGridX = Math.floor(playerX / WorldConfig.TILE_SIZE);
-    const playerGridY = Math.floor(playerY / WorldConfig.TILE_SIZE);
+    const playerGridX = Math.floor(playerX / this.cellSize);
+    const playerGridY = Math.floor(playerY / this.cellSize);
 
-    if (playerGridX >= 0 && playerGridX < WorldConfig.GRID_SIZE &&
-      playerGridY >= 0 && playerGridY < WorldConfig.GRID_SIZE) {
-      const terrainIndex = playerGridY * WorldConfig.GRID_SIZE + playerGridX;
+    if (playerGridX >= 0 && playerGridX < this.gridWidth &&
+      playerGridY >= 0 && playerGridY < this.gridWidth) {
+      const terrainIndex = playerGridY * this.gridWidth + playerGridX;
       const terrainData = this.scene.generator ? this.scene.generator.data : null;
       const terrainType = terrainData ? terrainData[terrainIndex] : -1;
 
@@ -217,16 +219,16 @@ export class VegetationManager {
     const worldMaxX = worldMinX + this.CHUNK_SIZE;
     const worldMaxY = worldMinY + this.CHUNK_SIZE;
 
-    const gridMinX = Math.floor(worldMinX / 2.5);
-    const gridMinY = Math.floor(worldMinY / 2.5);
-    const gridMaxX = Math.ceil(worldMaxX / 2.5);
-    const gridMaxY = Math.ceil(worldMaxY / 2.5);
+    const gridMinX = Math.floor(worldMinX / this.cellSize);
+    const gridMinY = Math.floor(worldMinY / this.cellSize);
+    const gridMaxX = Math.ceil(worldMaxX / this.cellSize);
+    const gridMaxY = Math.ceil(worldMaxY / this.cellSize);
 
-    if (gridMaxX <= 0 || gridMaxY <= 0 || gridMinX >= 8000 || gridMinY >= 8000) {
+    if (gridMaxX <= 0 || gridMaxY <= 0 || gridMinX >= this.gridWidth || gridMinY >= this.gridWidth) {
       return;
     }
 
-    const GRID_WIDTH = 8000;
+    const GRID_WIDTH = this.gridWidth;
     const terrainData = this.scene.generator?.data ?? null;
 
     for (let gy = Math.max(0, gridMinY); gy < Math.min(GRID_WIDTH, gridMaxY); gy++) {
@@ -262,8 +264,8 @@ export class VegetationManager {
             textureKey = 'apple_spr'; originY = 0.6; ySort = true; break;
         }
 
-        const baseX = gx * 2.5;
-        const baseY = gy * 2.5;
+        const baseX = gx * this.cellSize;
+        const baseY = gy * this.cellSize;
         const worldX = baseX + ((this.rng ? this.rng.range(-1, 1) : (Math.random() * 2 - 1)));
         const worldY = baseY + ((this.rng ? this.rng.range(-1, 1) : (Math.random() * 2 - 1)));
 
@@ -292,8 +294,8 @@ export class VegetationManager {
 
     const nearby = [];
     const radiusSq = radius * radius;
-    const GRID_WIDTH = 8000;
-    const CELL_SIZE = 2.5;
+    const GRID_WIDTH = this.gridWidth;
+    const CELL_SIZE = this.cellSize;
 
     const minGx = Math.floor((playerX - radius) / CELL_SIZE);
     const maxGx = Math.ceil((playerX + radius) / CELL_SIZE);

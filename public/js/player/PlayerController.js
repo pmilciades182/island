@@ -88,8 +88,8 @@ export class PlayerController {
   get y() { return this.playerContainer.y; }
 
   _getObjectInRadius(worldX, worldY, radius) {
-    const ts = WorldConfig.TILE_SIZE;
-    const gs = WorldConfig.GRID_SIZE;
+    const ts = this.generator ? this.generator.tileSize : WorldConfig.TILE_SIZE;
+    const gs = this.generator ? this.generator.gridSize : WorldConfig.GRID_SIZE;
     const veg = this.generator.vegetation;
     if (!veg) return 0;
 
