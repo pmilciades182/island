@@ -345,7 +345,7 @@ class ProtoMinimalScene extends Phaser.Scene {
     if (exit) {
       this.cameras.main.fadeOut(400, 0, 0, 0);
       this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start('PrototypeScene');
+        this.scene.start('MenuScene');
       });
     }
   }

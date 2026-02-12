@@ -30,40 +30,73 @@ class MenuScene extends Phaser.Scene {
     }
 
     // New Menu Structure
-    this.menuOptions = [
+    this.mainMenuOptions = [
       { text: 'New Game', action: () => this.onNewGame() },
       { text: 'Load Game', action: () => console.log('Load Game selected') }, // Placeholder
-      { text: 'Prototype', action: () => this.startPrototype() },
+      { text: 'Prototypes', action: () => this.showPrototypeMenu() },
       { text: 'Options', action: () => console.log('Options selected') }, // Placeholder
       { text: 'Exit', action: () => console.log('Exit selected') } // Placeholder
     ];
+
+    this.prototypeMenuOptions = [
+      { text: 'Proto Base', action: () => this.startPrototype('ProtoBaseScene') },
+      { text: 'Proto Minimal', action: () => this.startPrototype('ProtoMinimalScene') },
+      { text: 'Fire Prototype', action: () => this.startPrototype('FireScene') },
+      { text: 'Back', action: () => this.showMainMenu() }
+    ];
     this.menuItems = []; // To store Phaser Text objects for menu options
+    this.currentMenu = 'main'; // 'main' or 'prototypes'
     this.selectedMenuItemIndex = 0;
     this.joystickCooldown = 0; // Cooldown for joystick navigation
+    this.keyboardCooldown = 0; // Cooldown for keyboard navigation
 
-    this.drawMainMenu();
+    this.showMainMenu();
     // this.loadSaves(); // Moved or refactored
   }
 
-  drawMainMenu() {
+  clearMenu() {
+    this.menuItems.forEach(item => item.destroy());
+    this.menuItems = [];
+    if (this.indicator) {
+      this.indicator.destroy();
+      this.indicator = null;
+    }
+    // Destroy existing title and subtitle if they exist
+    if (this.titleText) { this.titleText.destroy(); this.titleText = null; }
+    if (this.subtitleText) { this.subtitleText.destroy(); this.subtitleText = null; }
+  }
+
+  drawMenu(options, title, subtitle) {
+    this.clearMenu();
+
     const cx = this.W / 2;
     const startY = this.H / 2 - 40; // Starting Y position for the menu items
     const lineHeight = 30; // Vertical spacing between menu items
 
-    // Titulo
-    this.add.text(cx, startY - 80, 'ISLAND', {
-      fontSize: '48px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '700'
-    }).setOrigin(0.5);
-    this.add.text(cx, startY - 40, 'S U R V I V A L', {
-      fontSize: '18px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.6)', fontStyle: '400'
-    }).setOrigin(0.5);
+    // Title
+    if (title) {
+      this.titleText = this.add.text(cx, startY - 80, title, {
+        fontSize: '48px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '700'
+      }).setOrigin(0.5);
+    }
+    if (subtitle) {
+      this.subtitleText = this.add.text(cx, startY - 40, subtitle, {
+        fontSize: '18px', fontFamily: 'Inter, sans-serif', color: 'rgba(255,255,255,0.6)', fontStyle: '400'
+      }).setOrigin(0.5);
+    }
 
     // Menu Options
-    this.menuOptions.forEach((option, index) => {
+    options.forEach((option, index) => {
       const y = startY + (index * lineHeight);
       const menuItem = this.add.text(cx, y, option.text, {
         fontSize: '24px', fontFamily: 'Inter, sans-serif', color: '#ffffff', fontStyle: '600'
       }).setOrigin(0.5);
+      menuItem.setInteractive({ useHandCursor: true });
+      menuItem.on('pointerdown', option.action);
+      menuItem.on('pointerover', () => {
+        this.selectedMenuItemIndex = index;
+        this.updateMenuSelection(options);
+      });
       this.menuItems.push(menuItem);
     });
 
@@ -72,10 +105,21 @@ class MenuScene extends Phaser.Scene {
       fontSize: '24px', fontFamily: 'Inter, sans-serif', color: '#ffd700', fontStyle: '700' // Gold color
     }).setOrigin(1, 0.5); // Origin at right to align to left of text
 
-    this.updateMenuSelection(); // Initial update
+    this.selectedMenuItemIndex = 0; // Reset selection for new menu
+    this.updateMenuSelection(options); // Initial update
   }
 
-  updateMenuSelection() {
+  showMainMenu() {
+    this.currentMenu = 'main';
+    this.drawMenu(this.mainMenuOptions, 'ISLAND', 'S U R V I V A L');
+  }
+
+  showPrototypeMenu() {
+    this.currentMenu = 'prototypes';
+    this.drawMenu(this.prototypeMenuOptions, 'PROTOTYPES', 'E X P E R I M E N T S');
+  }
+
+  updateMenuSelection(options) {
     this.menuItems.forEach((item, index) => {
       if (index === this.selectedMenuItemIndex) {
         item.setColor('#ffd700'); // Highlight selected item (gold)
@@ -411,24 +455,60 @@ class MenuScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Joystick navigation
+    let currentOptions;
+    if (this.currentMenu === 'main') {
+      currentOptions = this.mainMenuOptions;
+    } else if (this.currentMenu === 'prototypes') {
+      currentOptions = this.prototypeMenuOptions;
+    } else {
+      currentOptions = []; // Should not happen
+    }
+
+    // Update cooldowns
     if (this.joystickCooldown > 0) {
       this.joystickCooldown -= delta;
-    } else {
+    }
+    if (this.keyboardCooldown > 0) {
+      this.keyboardCooldown -= delta;
+    }
+
+    // Joystick navigation
+    if (this.joystickCooldown <= 0) {
       if (window.virtualInput.joystickY < -0.5) { // Joystick Up
-        this.selectedMenuItemIndex = (this.selectedMenuItemIndex - 1 + this.menuOptions.length) % this.menuOptions.length;
-        this.updateMenuSelection();
+        this.selectedMenuItemIndex = (this.selectedMenuItemIndex - 1 + currentOptions.length) % currentOptions.length;
+        this.updateMenuSelection(currentOptions);
         this.joystickCooldown = 200; // Cooldown in ms
       } else if (window.virtualInput.joystickY > 0.5) { // Joystick Down
-        this.selectedMenuItemIndex = (this.selectedMenuItemIndex + 1) % this.menuOptions.length;
-        this.updateMenuSelection();
+        this.selectedMenuItemIndex = (this.selectedMenuItemIndex + 1) % currentOptions.length;
+        this.updateMenuSelection(currentOptions);
         this.joystickCooldown = 200; // Cooldown in ms
       }
     }
 
-    // Button A for selection
+    // Keyboard navigation (WASD / Arrows)
+    const cursors = this.input.keyboard.createCursorKeys();
+    const W_key = this.input.keyboard.addKey('W');
+    const S_key = this.input.keyboard.addKey('S');
+    const ENTER_key = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+
+    if (this.keyboardCooldown <= 0) {
+      if (cursors.up.isDown || W_key.isDown) {
+        this.selectedMenuItemIndex = (this.selectedMenuItemIndex - 1 + currentOptions.length) % currentOptions.length;
+        this.updateMenuSelection(currentOptions);
+        this.keyboardCooldown = 150; // Shorter cooldown for snappier keyboard
+      } else if (cursors.down.isDown || S_key.isDown) {
+        this.selectedMenuItemIndex = (this.selectedMenuItemIndex + 1) % currentOptions.length;
+        this.updateMenuSelection(currentOptions);
+        this.keyboardCooldown = 150;
+      } else if (ENTER_key.isDown) {
+        currentOptions[this.selectedMenuItemIndex].action();
+        this.keyboardCooldown = 200;
+      }
+    }
+    
+    // Button A for selection (joystick)
     if (window.virtualInput.buttonA && this.joystickCooldown <= 0) {
-      this.menuOptions[this.selectedMenuItemIndex].action();
+      currentOptions[this.selectedMenuItemIndex].action();
       this.joystickCooldown = 300; // Cooldown for action button
     }
   }
@@ -509,11 +589,12 @@ class MenuScene extends Phaser.Scene {
     });
   }
 
-  startPrototype() {
+  startPrototype(sceneKey) {
     if (this.modal) return;
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.start('PrototypeScene');
+      this.scene.start(sceneKey);
     });
   }
+
 }

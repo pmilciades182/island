@@ -1,20 +1,14 @@
-import { WorldConfig } from '../world/WorldConfig.js';
-import { IslandGenerator } from '../world/IslandGenerator.js';
-import { TerrainRenderer } from '../world/TerrainRenderer.js';
 import { AnimationManager } from '../player/AnimationManager.js';
 import { PlayerController } from '../player/PlayerController.js';
 import { HUD } from '../ui/HUD.js';
 import { DayNightCycle } from '../world/DayNightCycle.js';
-import { VegetationManager } from '../world/VegetationManager.js';
-import { ProximityManager } from '../world/ProximityManager.js';
-import { TaskDistributor } from '../world/TaskDistributor.js';
-import { InteractIndicator } from '../ui/InteractIndicator.js';
-import { InteractPopup } from '../ui/InteractPopup.js';
 import { SoundManager } from '../audio/SoundManager.js';
+import FireDef from '../objects/fire/definition.js';
 
-class ProtoBaseScene extends Phaser.Scene {
+
+class FireScene extends Phaser.Scene {
   constructor() {
-    super({ key: 'ProtoBaseScene' });
+    super({ key: 'FireScene' });
   }
 
   init() {
@@ -37,63 +31,19 @@ class ProtoBaseScene extends Phaser.Scene {
     this.load.spritesheet('feet_slash', `${base}/slash/FEET_shoes_brown.png`, { frameWidth: 64, frameHeight: 64 });
     this.load.spritesheet('torso_slash', `${base}/slash/TORSO_leather_armor_torso.png`, { frameWidth: 64, frameHeight: 64 });
     this.load.spritesheet('head_slash', `${base}/slash/HEAD_hair_blonde.png`, { frameWidth: 64, frameHeight: 64 });
+
+    // Preload assets for fire here if needed
+    // Example: this.load.image('fire_particle', 'assets/fire_particle.png');
+    // Example: this.load.spritesheet('fire_animation', 'assets/fire_sheet.png', { frameWidth: 32, frameHeight: 32 });
   }
 
-  async create() {
+  create() {
     const WORLD_W = 2000;
     const WORLD_H = 2000;
     this.WORLD_W = WORLD_W;
     this.WORLD_H = WORLD_H;
 
-    const TILE_SIZE = 2.5;
-    const GRID_SIZE = Math.floor(WORLD_W / TILE_SIZE); // 800
     const worldSeed = 0.42;
-
-    // Loading UI
-    const cx = this.cameras.main.width / 2;
-    const cy = this.cameras.main.height / 2;
-    const barW = 280;
-    const barH = 6;
-
-    const loadContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(999999);
-
-    const loadTitle = this.add.text(cx, cy - 40, 'PROTO BASE', {
-      fontSize: '22px', fontFamily: '"Rubik", sans-serif', color: '#10b981', fontStyle: '700'
-    }).setOrigin(0.5);
-    loadContainer.add(loadTitle);
-
-    const loadStep = this.add.text(cx, cy - 10, 'Initializing...', {
-      fontSize: '12px', fontFamily: '"JetBrains Mono", monospace', color: '#a1a1aa'
-    }).setOrigin(0.5);
-    loadContainer.add(loadStep);
-
-    const barY = cy + 12;
-    const barBg = this.add.graphics();
-    barBg.fillStyle(0x27272a, 1);
-    barBg.fillRoundedRect(cx - barW / 2, barY, barW, barH, 3);
-    loadContainer.add(barBg);
-
-    const barFill = this.add.graphics();
-    loadContainer.add(barFill);
-
-    const loadPct = this.add.text(cx, barY + barH + 8, '0%', {
-      fontSize: '11px', fontFamily: '"JetBrains Mono", monospace', color: '#10b981'
-    }).setOrigin(0.5, 0);
-    loadContainer.add(loadPct);
-
-    const drawBar = (ratio) => {
-      barFill.clear();
-      if (ratio > 0) {
-        barFill.fillStyle(0x10b981, 1);
-        barFill.fillRoundedRect(cx - barW / 2, barY, Math.max(barW * ratio, barH), barH, 3);
-      }
-      loadPct.setText(`${Math.round(ratio * 100)}%`);
-    };
-
-    const setStep = (text, pct) => {
-      loadStep.setText(text);
-      drawBar(pct);
-    };
 
     // Fake save data (no persistence)
     this.saveData = {
@@ -114,44 +64,19 @@ class ProtoBaseScene extends Phaser.Scene {
     // World bounds
     this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
 
-    // Generate terrain
-    setStep('Generating terrain...', 0.05);
-    this.generator = new IslandGenerator(worldSeed, WORLD_W, TILE_SIZE);
+    // Grass ground texture (flat, no terrain generation)
+    this._createGrassTexture(WORLD_W, WORLD_H);
+    this.add.image(WORLD_W / 2, WORLD_H / 2, 'proto_grass');
 
-    await this.generator.generate((prog) => {
-      setStep('Generating terrain...', 0.05 + prog * 0.45);
-    });
-
-    // Render texture
-    setStep('Rendering texture...', 0.50);
-    const renderer = new TerrainRenderer(this, worldSeed);
-    this.terrainImage = await renderer.render(this.generator.data, GRID_SIZE, TILE_SIZE, (prog) => {
-      setStep('Rendering texture...', 0.50 + prog * 0.40);
-    });
-
-    // Placing vegetation
-    setStep('Placing vegetation...', 0.90);
-    await new Promise(r => setTimeout(r, 0));
-
-    // Initializing systems
-    setStep('Initializing systems...', 0.95);
-    await new Promise(r => setTimeout(r, 0));
-
-    loadContainer.destroy();
-
-    // Validate spawn position
-    const biome = this.generator.getBiomeAt(p.x, p.y);
-    if (biome <= 1) { p.x = WORLD_W / 2; p.y = WORLD_H / 2; }
+    // No generator — player moves freely, no biome modifiers, no water
+    this.generator = null;
 
     // Managers
     this.soundManager = new SoundManager();
     this.soundManager.init();
 
-    this.vegetation = new VegetationManager(this, this.generator.vegetation, worldSeed, GRID_SIZE, TILE_SIZE);
     this.animManager = new AnimationManager(this);
-    this.playerController = new PlayerController(this, this.generator, this.soundManager, worldSeed);
-    this.taskDistributor = new TaskDistributor(this);
-    this.proximityManager = new ProximityManager(this, this.playerController.playerContainer, this.vegetation, this.generator, this.taskDistributor, { radius: 128 });
+    this.playerController = new PlayerController(this, null, this.soundManager, worldSeed);
 
     // Camera
     this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
@@ -172,18 +97,11 @@ class ProtoBaseScene extends Phaser.Scene {
     this.player = this.playerController.playerContainer;
     this.animManager.setIdle('down', this.playerController.playerLayers);
 
-    // HUD (no auto-save callback, exit goes to feedback)
+    // HUD
     this.hud = new HUD(this, this.saveData, {
       onExit: () => this._onExit(),
       onToggleCycle: () => this.dayNight.togglePause()
     });
-
-    // Interaction systems
-    this.interactIndicator = new InteractIndicator(this);
-    this.interactPopup = new InteractPopup(this);
-    this.input.keyboard.on('keydown-E', () => this._handleInteract());
-    this._padInteractHeld = false;
-    this._virtualInteractHeld = false;
 
     // Keyboard shortcuts
     this.input.keyboard.on('keydown-ESC', () => this._onExit());
@@ -194,15 +112,74 @@ class ProtoBaseScene extends Phaser.Scene {
       else if (event.key === '-' || event.key === '_') this.dayNight.advance(-5000);
     });
 
-    // Top bar label: PROTO BASE
+    // Top bar label
     this._createTopBar();
 
     // Feedback state
     this.feedbackOpen = false;
     this.feedbackNotes = '';
 
+    // ══════════════════════════════════════
+    //  FIRE PROPOSALS
+    // ══════════════════════════════════════
+
+    // Proposal 1: Simple Campfire Particle Emitter
+    // This fire would be a static object that emits particles upwards,
+    // creating a flickering flame effect. It would not move but could
+    // interact with the player if they step into it (e.g., deal damage).
+    // assets needed: a small fire particle image (e.g., a glow, a spark)
+    // implementation: Phaser.Particles.ParticleEmitterManager
+    const campfireX = WORLD_W / 2 - 200;
+    const campfireY = WORLD_H / 2 + 100;
+    const campfire = new FireDef(this, campfireX, campfireY);
+    this.add.text(campfireX, campfireY + 30, 'Campfire', { fontSize: '24px', color: '#FF4500' }).setOrigin(0.5);
+
+    // Proposal 2: Torch/Brazier Animated Sprite
+    // This fire would be represented by a looping sprite animation.
+    // Suitable for static light sources like torches on walls or braziers.
+    // assets needed: a spritesheet of fire animation frames
+    // implementation: Phaser.GameObjects.Sprite with animation
+    const torchX = WORLD_W / 2 + 150;
+    const torchY = WORLD_H / 2 - 100;
+    const torch = new FireDef(this, torchX, torchY);
+    this.add.text(torchX, torchY + 30, 'Torch', { fontSize: '24px', color: '#FFA500' }).setOrigin(0.5);
+
+    // Proposal 3: Environmental Hazard / Spreading Fire
+    // This fire would be a larger, potentially spreading element that could
+    // affect an area. It might be triggered by events or player actions,
+    // and could have an associated damage zone.
+    // assets needed: larger fire sprites, possibly a series for spreading stages
+    // implementation: Dynamic texture or multiple animated sprites, collision detection
+    const hazardX = WORLD_W / 2;
+    const hazardY = WORLD_H / 2 - 250;
+    const hazardFire = new FireDef(this, hazardX, hazardY);
+    this.add.text(hazardX, hazardY + 30, 'Hazard Fire', { fontSize: '24px', color: '#FF0000' }).setOrigin(0.5);
+
     this.ready = true;
   }
+
+  // ══════════════════════════════════════
+  //  GRASS TEXTURE GENERATION
+  // ══════════════════════════════════════
+
+  _createGrassTexture(w, h) {
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#5aa460';
+    ctx.fillRect(0, 0, w, h);
+
+    if (this.textures.exists('proto_grass')) {
+      this.textures.remove('proto_grass');
+    }
+    this.textures.addCanvas('proto_grass', canvas);
+  }
+
+  // ══════════════════════════════════════
+  //  TOP BAR
+  // ══════════════════════════════════════
 
   _createTopBar() {
     const pad = 8;
@@ -210,9 +187,9 @@ class ProtoBaseScene extends Phaser.Scene {
     topBar.fillStyle(0x000000, 0.5);
     topBar.fillRect(0, 0, this.cameras.main.width, 28);
 
-    this.add.text(pad, 6, 'PROTO BASE', {
+    this.add.text(pad, 6, 'FIRE PROTOTYPE', { // Changed text for the new scene
       fontSize: '11px', fontFamily: '"JetBrains Mono", monospace',
-      color: '#10b981', fontStyle: '700'
+      color: '#60a5fa', fontStyle: '700'
     }).setScrollFactor(0).setDepth(100001);
 
     this.add.text(this.cameras.main.width - pad, 6, '[ESC] Exit + Feedback', {
@@ -221,44 +198,13 @@ class ProtoBaseScene extends Phaser.Scene {
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(100001);
   }
 
-  _handleInteract() {
-    const target = this.interactIndicator.currentObject;
-    if (this.interactPopup.isOpen) {
-      this.soundManager.playClick();
-      this.interactPopup.close();
-    } else if (target) {
-      this.soundManager.playInteract();
-      this.interactPopup.open(target);
-    }
-  }
+  // ══════════════════════════════════════
+  //  UPDATE
+  // ══════════════════════════════════════
 
   update(time, delta) {
     if (!this.ready) return;
 
-    // Gamepad X → interact
-    const pad = this.playerController.gamepad;
-    if (pad) {
-      const xPressed = pad.X;
-      if (xPressed && !this._padInteractHeld) {
-        this._padInteractHeld = true;
-        this._handleInteract();
-      } else if (!xPressed) {
-        this._padInteractHeld = false;
-      }
-    }
-
-    // Virtual A → interact
-    const vi = window.virtualInput;
-    if (vi) {
-      if (vi.buttonA && !this._virtualInteractHeld) {
-        this._virtualInteractHeld = true;
-        this._handleInteract();
-      } else if (!vi.buttonA) {
-        this._virtualInteractHeld = false;
-      }
-    }
-
-    this.proximityManager.update();
     const moveState = this.playerController.update(delta, this.stamina, this.maxStamina, this.staminaCooldown);
     const cam = this.cameras.main;
 
@@ -271,23 +217,6 @@ class ProtoBaseScene extends Phaser.Scene {
       if (dx < 1 && dy < 1) cam.setLerp(1, 1);
       else cam.setLerp(0.2, 0.2);
     }
-
-    const lastPayload = this.taskDistributor.lastPayload;
-    let closestInteractable = null;
-    let closestDistSq = Infinity;
-
-    if (lastPayload) {
-      const nearbyVeg = lastPayload.vegetation || [];
-      nearbyVeg.forEach(obj => {
-        const distSq = Phaser.Math.Distance.Squared(this.player.x, this.player.y, obj.x, obj.y);
-        if (distSq < closestDistSq) {
-          closestDistSq = distSq;
-          closestInteractable = obj;
-        }
-      });
-    }
-
-    this.interactIndicator.update(closestInteractable);
 
     if (moveState.sprinting) {
       this.stamina = Math.max(0, this.stamina - 40 * (delta / 1000));
@@ -320,13 +249,12 @@ class ProtoBaseScene extends Phaser.Scene {
       inventory: this.inventory
     });
 
-    this.vegetation.update(this.playerController.x, this.playerController.y);
     const { timeStr } = this.dayNight.update(delta);
     this.hud.setTimeText(timeStr);
   }
 
   // ══════════════════════════════════════
-  //  FEEDBACK MODAL (exit to selector)
+  //  FEEDBACK MODAL
   // ══════════════════════════════════════
 
   _onExit() {
@@ -405,7 +333,7 @@ class ProtoBaseScene extends Phaser.Scene {
       if (e.key === 'Backspace') {
         this.feedbackNotes = this.feedbackNotes.slice(0, -1);
       } else if (e.key === 'Enter') {
-        this.feedbackNotes += '\n';
+        this.feedbackNotes += '\\n';
       } else if (e.key === 'Escape') {
         this._closeFeedback(true);
         return;
@@ -448,7 +376,7 @@ class ProtoBaseScene extends Phaser.Scene {
 
   _closeFeedback(exit) {
     if (this.feedbackNotes.trim()) {
-      console.log('[ProtoBaseScene] Feedback:', this.feedbackNotes.trim());
+      console.log('[FireScene] Feedback:', this.feedbackNotes.trim()); // Changed log for the new scene
     }
 
     this.input.keyboard.off('keydown', this._fbKeyHandler);
@@ -465,4 +393,4 @@ class ProtoBaseScene extends Phaser.Scene {
   }
 }
 
-window.ProtoBaseScene = ProtoBaseScene;
+window.FireScene = FireScene;

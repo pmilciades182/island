@@ -26,7 +26,7 @@ const config = {
 };
 
 window.addEventListener('load', () => {
-  config.scene = [MenuScene, window.GameScene, window.PrototypeScene, window.ProtoBaseScene, window.ProtoMinimalScene];
+  config.scene = [MenuScene, window.GameScene, window.ProtoBaseScene, window.ProtoMinimalScene, window.FireScene];
   const game = new Phaser.Game(config);
 
   // Set NEAREST filtering for all textures by default (same as pixelArt)
