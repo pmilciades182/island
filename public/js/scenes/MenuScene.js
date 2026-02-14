@@ -42,6 +42,8 @@ class MenuScene extends Phaser.Scene {
       { text: 'Proto Base', action: () => this.startPrototype('ProtoBaseScene') },
       { text: 'Proto Minimal', action: () => this.startPrototype('ProtoMinimalScene') },
       { text: 'Fire Prototype', action: () => this.startPrototype('FireScene') },
+      { text: 'Geometric Prototype', action: () => this.startPrototype('GeometricScene') },
+      { text: 'River Prototype', action: () => this.startPrototype('RiverScene') },
       { text: 'Back', action: () => this.showMainMenu() }
     ];
     this.menuItems = []; // To store Phaser Text objects for menu options
