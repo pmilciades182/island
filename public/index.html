@@ -541,6 +541,23 @@
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
   <script src="js/lib/noise.js"></script>
+  <script>
+    // Ensure noise is globally available for ES modules
+    // Assuming the noise.js library exposes a global 'Noise' constructor
+    if (typeof Noise !== 'undefined' && typeof window.noise === 'undefined') {
+      window.noise = new Noise();
+    } else if (typeof window.noise === 'undefined' && typeof window.Noise === 'function') {
+      // Fallback if 'Noise' is directly exposed but 'noise' isn't instantiated
+      window.noise = new window.Noise();
+    } else if (typeof window.noise === 'undefined' && typeof o === 'function') {
+      // Specific to minified noise.js pattern: !function(t){function o(t){...}}(this);
+      // 'o' is the constructor for Noise, 't' is window
+      window.Noise = o;
+      window.noise = new window.Noise();
+    }
+    // Debug log to confirm
+    console.log("Noise.js loaded and assigned to window.noise:", window.noise);
+  </script>
   <script type="module" src="js/world/WorldConfig.js"></script>
   <script type="module" src="js/world/IslandGenerator.js"></script>
   <script type="module" src="js/world/TerrainRenderer.js"></script>

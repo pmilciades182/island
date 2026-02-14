@@ -5,28 +5,40 @@ class Fire extends Phaser.GameObjects.Container {
   constructor(scene, x, y, width = 64, height = 96) {
     super(scene, x, y);
     scene.add.existing(this);
+    this.setDepth(10000); // Set a high depth to ensure visibility
+
+    this._width = width; // Store for updateProceduralFireGraphic
+    this._height = height; // Store for updateProceduralFireGraphic
+
+    // Debug: Check initial Fire object creation
+    console.log(`[FireDef Debug] Creating Fire at world (x,y): (${x},${y}) with dimensions (${width},${height})`);
 
     // Create the procedural graphic (draws relative to its own 0,0)
-    // We'll pass the scene and the dimensions for the graphic
-    this.fireGraphic = createProceduralFireGraphic(scene, width, height);
+    this.fireGraphic = createProceduralFireGraphic(scene);
     this.add(this.fireGraphic);
 
-    // Scale the fire graphic itself
+    // Apply initial scale to the graphic itself, not the container
     this.fireGraphic.setScale(CONFIG.baseScale);
 
     // Position the graphic within the container to simulate the origin
-    // If CONFIG.origin is {x: 0.5, y: 0.8}, it means the (x,y) coordinates passed
-    // to the Fire constructor should point to the 50% X and 80% Y point of the fire graphic.
-    // So, the graphic's top-left (its own 0,0) should be offset negatively.
-    this.fireGraphic.x -= width * CONFIG.origin.x;
-    this.fireGraphic.y -= height * CONFIG.origin.y;
+    const offsetX = width * CONFIG.origin.x;
+    const offsetY = height * CONFIG.origin.y;
+    this.fireGraphic.x -= offsetX;
+    this.fireGraphic.y -= offsetY;
 
     // Set the container's world position directly to the x, y passed in
     this.setPosition(x, y);
+
+    // Debug: Check final positions after adjustments
+    console.log(`[FireDef Debug] Fire Container world (x,y): (${this.x},${this.y})`);
+    console.log(`[FireDef Debug] Fire Graphic local (x,y) within container: (${this.fireGraphic.x},${this.fireGraphic.y})`);
   }
 
   update(time, delta) {
-    updateProceduralFireGraphic(this.fireGraphic, time, delta, this.width, this.height);
+    // Debug: Check Fire container properties
+    console.log(`[FireContainer Debug] Visible: ${this.visible}, Alpha: ${this.alpha}, Depth: ${this.depth}, Active: ${this.active}, World (x,y): (${this.x},${this.y})`);
+
+    updateProceduralFireGraphic(this.fireGraphic, time, delta, this._width, this._height);
   }
 }
 

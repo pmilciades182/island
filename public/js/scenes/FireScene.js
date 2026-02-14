@@ -80,7 +80,7 @@ class FireScene extends Phaser.Scene {
 
     // Camera
     this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
-    this.cameras.main.startFollow(this.playerController.playerContainer, false, 0.15, 0.15);
+    this.cameras.main.startFollow(this.playerController.playerContainer, false, 0.15, 0.15); // Restaurar seguimiento al personaje
     this.cameras.main.fadeIn(500, 0, 0, 0);
 
     // Day/Night
@@ -119,6 +119,8 @@ class FireScene extends Phaser.Scene {
     this.feedbackOpen = false;
     this.feedbackNotes = '';
 
+    this.fireObjects = []; // Initialize array to store fire objects
+
     // ══════════════════════════════════════
     //  FIRE PROPOSALS
     // ══════════════════════════════════════
@@ -131,17 +133,19 @@ class FireScene extends Phaser.Scene {
     // implementation: Phaser.Particles.ParticleEmitterManager
     const campfireX = WORLD_W / 2 - 200;
     const campfireY = WORLD_H / 2 + 100;
-    const campfire = new FireDef(this, campfireX, campfireY);
+    const campfire = new FireDef(this, campfireX, campfireY, 32, 48); // Reduce size by 400%
+    this.fireObjects.push(campfire); // Store fire object
     this.add.text(campfireX, campfireY + 30, 'Campfire', { fontSize: '24px', color: '#FF4500' }).setOrigin(0.5);
 
     // Proposal 2: Torch/Brazier Animated Sprite
     // This fire would be represented by a looping sprite animation.
     // Suitable for static light sources like torches on walls or braziers.
     // assets needed: a spritesheet of fire animation frames
-    // implementation: Phaser.GameObjects.Sprite with animation
+    // implementation: Phaser.Particles.ParticleEmitterManager
     const torchX = WORLD_W / 2 + 150;
     const torchY = WORLD_H / 2 - 100;
-    const torch = new FireDef(this, torchX, torchY);
+    const torch = new FireDef(this, torchX, torchY, 32, 48); // Reduce size by 400%
+    this.fireObjects.push(torch); // Store fire object
     this.add.text(torchX, torchY + 30, 'Torch', { fontSize: '24px', color: '#FFA500' }).setOrigin(0.5);
 
     // Proposal 3: Environmental Hazard / Spreading Fire
@@ -152,8 +156,11 @@ class FireScene extends Phaser.Scene {
     // implementation: Dynamic texture or multiple animated sprites, collision detection
     const hazardX = WORLD_W / 2;
     const hazardY = WORLD_H / 2 - 250;
-    const hazardFire = new FireDef(this, hazardX, hazardY);
+    const hazardFire = new FireDef(this, hazardX, hazardY, 32, 48); // Reduce size by 400%
+    this.fireObjects.push(hazardFire); // Store fire object
     this.add.text(hazardX, hazardY + 30, 'Hazard Fire', { fontSize: '24px', color: '#FF0000' }).setOrigin(0.5);
+
+
 
     this.ready = true;
   }
@@ -204,6 +211,9 @@ class FireScene extends Phaser.Scene {
 
   update(time, delta) {
     if (!this.ready) return;
+
+    // Manually call update for all Fire objects
+    this.fireObjects.forEach(fire => fire.update(time, delta));
 
     const moveState = this.playerController.update(delta, this.stamina, this.maxStamina, this.staminaCooldown);
     const cam = this.cameras.main;
